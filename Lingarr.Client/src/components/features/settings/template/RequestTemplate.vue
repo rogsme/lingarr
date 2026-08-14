@@ -141,7 +141,10 @@ const activeTemplateKey = computed((): keyof ISettings | '' => {
         const endpoint = settingsStore.getSetting(
             isOllama ? SETTINGS.OLLAMA_ENDPOINT : SETTINGS.LOCAL_AI_ENDPOINT
         ) as string
-        const useGenerate = !endpoint?.trimEnd().replace(/\/$/, '').endsWith('completions')
+        const useGenerate = !(endpoint || '')
+            .replace(/\/+$/, '')
+            .toLowerCase()
+            .endsWith('completions')
         if (isOllama) {
             return useGenerate
                 ? SETTINGS.OLLAMA_GENERATE_REQUEST_TEMPLATE
@@ -154,11 +157,18 @@ const activeTemplateKey = computed((): keyof ISettings | '' => {
     return templateMap[serviceType.value] || ''
 })
 
+const presets = ref<Record<string, string>>({})
+const presetOptions = ref<{ value: string; label: string }[]>([])
+
 const templateValue = computed(() => {
     if (!activeTemplateKey.value) {
         return '{}'
     }
-    return (settingsStore.getSetting(activeTemplateKey.value) as string) || '{}'
+    return (
+        (settingsStore.getSetting(activeTemplateKey.value) as string) ||
+        presets.value[activeTemplateKey.value] ||
+        '{}'
+    )
 })
 
 const prettyTemplate = computed(() => {
@@ -201,9 +211,6 @@ function onJsonInput(value: string) {
         // Don't save invalid JSON (user could be still typing)
     }
 }
-
-const presets = ref<Record<string, string>>({})
-const presetOptions = ref<{ value: string; label: string }[]>([])
 
 const presetLabelMap: Record<string, string> = {
     openai_request_template: 'OpenAI Chat',
