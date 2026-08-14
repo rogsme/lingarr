@@ -15,11 +15,17 @@ public class RequestTemplateService : IRequestTemplateService
     {
         [SettingKeys.Translation.OpenAi.RequestTemplate] =
             () => JsonSerializer.Serialize(new OpenAiChatTemplate()),
+        [SettingKeys.Translation.OpenRouter.RequestTemplate] =
+            () => JsonSerializer.Serialize(new OpenAiChatTemplate()),
         [SettingKeys.Translation.Anthropic.RequestTemplate] =
             () => JsonSerializer.Serialize(new AnthropicTemplate()),
         [SettingKeys.Translation.LocalAi.ChatRequestTemplate] =
             () => JsonSerializer.Serialize(new LocalAiChatTemplate()),
         [SettingKeys.Translation.LocalAi.GenerateRequestTemplate] =
+            () => JsonSerializer.Serialize(new OllamaGenerateTemplate()),
+        [SettingKeys.Translation.Ollama.ChatRequestTemplate] =
+            () => JsonSerializer.Serialize(new LocalAiChatTemplate()),
+        [SettingKeys.Translation.Ollama.GenerateRequestTemplate] =
             () => JsonSerializer.Serialize(new OllamaGenerateTemplate()),
         [SettingKeys.Translation.DeepSeek.RequestTemplate] =
             () => JsonSerializer.Serialize(new DeepSeekTemplate()),

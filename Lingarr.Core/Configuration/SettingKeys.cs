@@ -26,6 +26,13 @@ public static class SettingKeys
             public const string RequestTemplate = "openai_request_template";
         }
 
+        public static class OpenRouter
+        {
+            public const string Model = "openrouter_model";
+            public const string ApiKey = "openrouter_api_key";
+            public const string RequestTemplate = "openrouter_request_template";
+        }
+
         public static class Anthropic
         {
             public const string Model = "anthropic_model";
@@ -41,6 +48,15 @@ public static class SettingKeys
             public const string ApiKey = "local_ai_api_key";
             public const string ChatRequestTemplate = "local_ai_chat_request_template";
             public const string GenerateRequestTemplate = "local_ai_generate_request_template";
+        }
+
+        public static class Ollama
+        {
+            public const string Model = "ollama_model";
+            public const string Endpoint = "ollama_endpoint";
+            public const string ApiKey = "ollama_api_key";
+            public const string ChatRequestTemplate = "ollama_chat_request_template";
+            public const string GenerateRequestTemplate = "ollama_generate_request_template";
         }
 
         public static class DeepL

@@ -1,5 +1,6 @@
 ﻿using GTranslate.Translators;
 using Lingarr.Contracts.Translation;
+using Lingarr.Core.Configuration;
 using Lingarr.Server.Interfaces.Services;
 using Lingarr.Server.Interfaces.Services.Translation;
 
@@ -78,6 +79,20 @@ public class TranslationFactory : ITranslationServiceFactory
                 _serviceProvider.GetRequiredService<IRequestTemplateService>()
             ),
 
+            "openrouter" => new OpenAiService(
+                _serviceProvider.GetRequiredService<ISettingService>(),
+                _serviceProvider.GetRequiredService<ILogger<OpenAiService>>(),
+                languageCodeService,
+                _serviceProvider.GetRequiredService<IRequestTemplateService>(),
+                _serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(),
+                endpoint: "https://openrouter.ai/api/v1/",
+                serviceName: "OpenRouter",
+                modelSettingKey: SettingKeys.Translation.OpenRouter.Model,
+                apiKeySettingKey: SettingKeys.Translation.OpenRouter.ApiKey,
+                requestTemplateSettingKey: SettingKeys.Translation.OpenRouter.RequestTemplate,
+                modelsHttpClient: _serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient()
+            ),
+
             "anthropic" => new AnthropicService(
                 _serviceProvider.GetRequiredService<ISettingService>(),
                 _serviceProvider.GetRequiredService<HttpClient>(),
@@ -92,6 +107,20 @@ public class TranslationFactory : ITranslationServiceFactory
                 _serviceProvider.GetRequiredService<ILogger<LocalAiService>>(),
                 languageCodeService,
                 _serviceProvider.GetRequiredService<IRequestTemplateService>()
+            ),
+
+            "ollama" => new LocalAiService(
+                _serviceProvider.GetRequiredService<ISettingService>(),
+                _serviceProvider.GetRequiredService<HttpClient>(),
+                _serviceProvider.GetRequiredService<ILogger<LocalAiService>>(),
+                languageCodeService,
+                _serviceProvider.GetRequiredService<IRequestTemplateService>(),
+                serviceName: "Ollama",
+                modelSettingKey: SettingKeys.Translation.Ollama.Model,
+                endpointSettingKey: SettingKeys.Translation.Ollama.Endpoint,
+                apiKeySettingKey: SettingKeys.Translation.Ollama.ApiKey,
+                chatRequestTemplateSettingKey: SettingKeys.Translation.Ollama.ChatRequestTemplate,
+                generateRequestTemplateSettingKey: SettingKeys.Translation.Ollama.GenerateRequestTemplate
             ),
 
             "deepseek" => new DeepSeekService(

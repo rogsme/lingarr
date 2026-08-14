@@ -184,11 +184,13 @@ public static class ServiceCollectionExtensions
         // Register manifests
         builder.Services.AddSingleton<IPluginManifest, AnthropicPluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, OpenAiPluginManifest>();
+        builder.Services.AddSingleton<IPluginManifest, OpenRouterPluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, GeminiPluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, DeepSeekPluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, MistralPluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, XAiPluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, LocalAiPluginManifest>();
+        builder.Services.AddSingleton<IPluginManifest, OllamaPluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, DeepLPluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, LibreTranslatePluginManifest>();
         builder.Services.AddSingleton<IPluginManifest, GoogleTranslatePluginManifest>();

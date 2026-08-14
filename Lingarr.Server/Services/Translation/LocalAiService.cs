@@ -17,6 +17,12 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
 {
     private readonly HttpClient _httpClient;
     private readonly IRequestTemplateService _requestTemplateService;
+    private readonly string _serviceName;
+    private readonly string _modelSettingKey;
+    private readonly string _endpointSettingKey;
+    private readonly string _apiKeySettingKey;
+    private readonly string _chatRequestTemplateSettingKey;
+    private readonly string _generateRequestTemplateSettingKey;
     private string? _model;
     private string? _endpoint;
     private string? _chatRequestTemplate;
@@ -38,11 +44,23 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         HttpClient httpClient,
         ILogger<LocalAiService> logger,
         LanguageCodeService languageCodeService,
-        IRequestTemplateService requestTemplateService)
+        IRequestTemplateService requestTemplateService,
+        string serviceName = "Custom AI",
+        string modelSettingKey = SettingKeys.Translation.LocalAi.Model,
+        string endpointSettingKey = SettingKeys.Translation.LocalAi.Endpoint,
+        string apiKeySettingKey = SettingKeys.Translation.LocalAi.ApiKey,
+        string chatRequestTemplateSettingKey = SettingKeys.Translation.LocalAi.ChatRequestTemplate,
+        string generateRequestTemplateSettingKey = SettingKeys.Translation.LocalAi.GenerateRequestTemplate)
         : base(settings, logger, languageCodeService)
     {
         _httpClient = httpClient;
         _requestTemplateService = requestTemplateService;
+        _serviceName = serviceName;
+        _modelSettingKey = modelSettingKey;
+        _endpointSettingKey = endpointSettingKey;
+        _apiKeySettingKey = apiKeySettingKey;
+        _chatRequestTemplateSettingKey = chatRequestTemplateSettingKey;
+        _generateRequestTemplateSettingKey = generateRequestTemplateSettingKey;
     }
 
     /// <summary>
@@ -63,10 +81,10 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
             if (_initialized) return;
 
             var settings = await _settings.GetSettings([
-                SettingKeys.Translation.LocalAi.Model,
-                SettingKeys.Translation.LocalAi.Endpoint,
-                SettingKeys.Translation.LocalAi.ChatRequestTemplate,
-                SettingKeys.Translation.LocalAi.GenerateRequestTemplate,
+                _modelSettingKey,
+                _endpointSettingKey,
+                _chatRequestTemplateSettingKey,
+                _generateRequestTemplateSettingKey,
                 SettingKeys.Translation.AiPrompt,
                 SettingKeys.Translation.AiUserPrompt,
                 SettingKeys.Translation.ProofreadPrompt,
@@ -77,18 +95,18 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
                 SettingKeys.Translation.RetryDelayMultiplier,
                 SettingKeys.Translation.LanguageCodeFormat
             ]);
-            _model = settings[SettingKeys.Translation.LocalAi.Model];
-            _endpoint = settings[SettingKeys.Translation.LocalAi.Endpoint];
-            _chatRequestTemplate = !string.IsNullOrEmpty(settings[SettingKeys.Translation.LocalAi.ChatRequestTemplate])
-                ? settings[SettingKeys.Translation.LocalAi.ChatRequestTemplate]
-                : _requestTemplateService.GetDefaultTemplate(SettingKeys.Translation.LocalAi.ChatRequestTemplate);
-            _generateRequestTemplate = !string.IsNullOrEmpty(settings[SettingKeys.Translation.LocalAi.GenerateRequestTemplate])
-                ? settings[SettingKeys.Translation.LocalAi.GenerateRequestTemplate]
-                : _requestTemplateService.GetDefaultTemplate(SettingKeys.Translation.LocalAi.GenerateRequestTemplate);
+            _model = settings[_modelSettingKey];
+            _endpoint = settings[_endpointSettingKey];
+            _chatRequestTemplate = !string.IsNullOrEmpty(settings[_chatRequestTemplateSettingKey])
+                ? settings[_chatRequestTemplateSettingKey]
+                : _requestTemplateService.GetDefaultTemplate(_chatRequestTemplateSettingKey);
+            _generateRequestTemplate = !string.IsNullOrEmpty(settings[_generateRequestTemplateSettingKey])
+                ? settings[_generateRequestTemplateSettingKey]
+                : _requestTemplateService.GetDefaultTemplate(_generateRequestTemplateSettingKey);
 
             if (string.IsNullOrEmpty(_model) || string.IsNullOrEmpty(_endpoint))
             {
-                throw new InvalidOperationException("Local AI service requires both endpoint address and model name to be configured in settings.");
+                throw new InvalidOperationException($"{_serviceName} requires both endpoint address and model name to be configured in settings.");
             }
 
             SetLanguageReplacements(sourceLanguage, targetLanguage, settings[SettingKeys.Translation.LanguageCodeFormat]);
@@ -106,7 +124,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
 
-            var apiKey = await _settings.GetEncryptedSetting(SettingKeys.Translation.LocalAi.ApiKey);
+            var apiKey = await _settings.GetEncryptedSetting(_apiKeySettingKey);
             if (!string.IsNullOrEmpty(apiKey))
             {
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
@@ -243,7 +261,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
 
     /// <summary>
     /// Translates a batch of subtitles in a single API call using structured outputs fallback
-    /// Since LocalAI may not support structured outputs, we'll attempt structured format first,
+    /// Since custom endpoints may not support structured outputs, we'll attempt structured format first,
     /// then fall back to regular parsing if needed. Responses that cannot be parsed are retried
     /// using the configured retry settings, as local models occasionally emit malformed JSON.
     /// </summary>
@@ -283,7 +301,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
 
                 _logger.LogWarning(
                     "{ServiceName} received {StatusCode}. Retrying in {Delay}... (Attempt {Attempt}/{MaxRetries})",
-                    "LocalAI", ex.StatusCode, delay, attempt, _maxRetries);
+                    _serviceName, ex.StatusCode, delay, attempt, _maxRetries);
             }
             catch (TranslationParseException ex)
             {
@@ -295,7 +313,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
 
                 _logger.LogWarning(
                     "{ServiceName} returned an unparsable response. Retrying in {Delay}... (Attempt {Attempt}/{MaxRetries})",
-                    "LocalAI", delay, attempt, _maxRetries);
+                    _serviceName, delay, attempt, _maxRetries);
 
                 await Task.Delay(delay, linked.Token).ConfigureAwait(false);
                 delay = TimeSpan.FromTicks(delay.Ticks * _retryDelayMultiplier);
@@ -398,18 +416,18 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "LocalAI structured output batch request failed with status {StatusCode}: {ResponseContent}",
-                response.StatusCode, 
+                "{ServiceName} structured output batch request failed with status {StatusCode}: {ResponseContent}",
+                _serviceName, response.StatusCode,
                 responseContent);
             throw new TranslationException(
-                $"LocalAI structured output batch request failed with status {response.StatusCode}: {responseContent}");
+                $"{_serviceName} structured output batch request failed with status {response.StatusCode}: {responseContent}");
         }
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
         var chatResponse = JsonSerializer.Deserialize<ChatResponse>(responseBody);
         if (chatResponse?.Choices == null || chatResponse.Choices.Count == 0)
         {
-            throw new TranslationException("No completion choices returned from LocalAI");
+            throw new TranslationException($"No completion choices returned from {_serviceName}");
         }
 
         var translatedJson = chatResponse.Choices[0].Message.Content;
@@ -457,11 +475,11 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "LocalAI JSON parsing batch request failed with status {StatusCode}: {ResponseContent}",
-                response.StatusCode, 
+                "{ServiceName} JSON parsing batch request failed with status {StatusCode}: {ResponseContent}",
+                _serviceName, response.StatusCode,
                 responseContent);
             throw new TranslationException(
-                $"LocalAI JSON parsing batch request failed with status {response.StatusCode}: {responseContent}");
+                $"{_serviceName} JSON parsing batch request failed with status {response.StatusCode}: {responseContent}");
         }
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -469,7 +487,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
 
         if (chatResponse?.Choices == null || chatResponse.Choices.Count == 0)
         {
-            throw new TranslationException("No completion choices returned from LocalAI");
+            throw new TranslationException($"No completion choices returned from {_serviceName}");
         }
 
         // Try to extract JSON
@@ -524,10 +542,10 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "LocalAI generate API batch request failed with status {StatusCode}: {ResponseContent}",
-                response.StatusCode, responseContent);
+                "{ServiceName} generate API batch request failed with status {StatusCode}: {ResponseContent}",
+                _serviceName, response.StatusCode, responseContent);
             throw new TranslationException(
-                $"LocalAI generate API batch request failed with status {response.StatusCode}: {responseContent}");
+                $"{_serviceName} generate API batch request failed with status {response.StatusCode}: {responseContent}");
         }
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -582,10 +600,10 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "LocalAI generate API request failed with status {StatusCode}: {ResponseContent}",
-                response.StatusCode, responseContent);
+                "{ServiceName} generate API request failed with status {StatusCode}: {ResponseContent}",
+                _serviceName, response.StatusCode, responseContent);
             throw new TranslationException(
-                $"LocalAI generate API request failed with status {response.StatusCode}: {responseContent}");
+                $"{_serviceName} generate API request failed with status {response.StatusCode}: {responseContent}");
         }
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -606,7 +624,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         var bodyJson = _requestTemplateService.BuildRequestBody(_chatRequestTemplate!, replacements);
         
 
-               var content = new StringContent(bodyJson,
+        var content = new StringContent(bodyJson,
             Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync(_endpoint, content, cancellationToken);
@@ -615,12 +633,12 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "LocalAI chat API request to {Endpoint} failed with status {StatusCode}: {ResponseContent}",
-                _endpoint, 
+                "{ServiceName} chat API request to {Endpoint} failed with status {StatusCode}: {ResponseContent}",
+                _serviceName, _endpoint,
                 response.StatusCode, 
                 responseContent);
             throw new TranslationResponseException(
-                $"LocalAI chat API request failed with status {response.StatusCode}: {responseContent}");
+                $"{_serviceName} chat API request failed with status {response.StatusCode}: {responseContent}");
         }
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
