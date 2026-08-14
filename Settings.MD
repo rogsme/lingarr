@@ -142,6 +142,15 @@ The `SOURCE_LANGUAGES` and `TARGET_LANGUAGES` variables should be provided as a 
 | `AI_PROMPT`              | The prompt template for AI-based translation services.                          |
 | `AI_USER_PROMPT`         | The user message template. Supports `{lineToTranslate}`, `{contextBefore}` and `{contextAfter}`. |
 
+#### **OpenRouter**
+
+| **Environment Variable** | **Description**                                                                 |
+|--------------------------|---------------------------------------------------------------------------------|
+| `OPENROUTER_MODEL`       | The model to use for OpenRouter translations.                                   |
+| `OPENROUTER_API_KEY`     | The API key for authenticating with OpenRouter.                                 |
+| `AI_PROMPT`              | The prompt template for AI-based translation services.                          |
+| `AI_USER_PROMPT`         | The user message template. Supports `{lineToTranslate}`, `{contextBefore}` and `{contextAfter}`. |
+
 #### **xAI**
 
 | **Environment Variable** | **Description**                                                                 |
@@ -151,19 +160,29 @@ The `SOURCE_LANGUAGES` and `TARGET_LANGUAGES` variables should be provided as a 
 | `AI_PROMPT`              | The prompt template for AI-based translation services.                          |
 | `AI_USER_PROMPT`         | The user message template. Supports `{lineToTranslate}`, `{contextBefore}` and `{contextAfter}`. |
 
-#### **LocalAI**
+#### **Custom AI**
 
 | **Environment Variable** | **Description**                                                                 |
 |--------------------------|---------------------------------------------------------------------------------|
-| `LOCAL_AI_MODEL`         | The model to use for LocalAI translations.                                      |
-| `LOCAL_AI_API_KEY`       | The API key for authenticating with LocalAI.                                    |
-| `LOCAL_AI_ENDPOINT`      | The full URL of the completion endpoint. Example: `http://ollama:11434/v1/chat/completions`. |
+| `LOCAL_AI_MODEL`         | The model to use for Custom AI translations.                                    |
+| `LOCAL_AI_API_KEY`       | The optional API key for authenticating with the custom endpoint.               |
+| `LOCAL_AI_ENDPOINT`      | The full URL of the endpoint. Example: `http://localhost:8080/v1/chat/completions`. |
+| `AI_PROMPT`              | The prompt template for AI-based translation services.                          |
+| `AI_USER_PROMPT`         | The user message template. Supports `{lineToTranslate}`, `{contextBefore}` and `{contextAfter}`. |
+
+#### **Ollama**
+
+| **Environment Variable** | **Description**                                                                 |
+|--------------------------|---------------------------------------------------------------------------------|
+| `OLLAMA_MODEL`           | The model to use for Ollama translations.                                       |
+| `OLLAMA_API_KEY`         | The optional bearer token for an authenticated Ollama deployment or proxy.      |
+| `OLLAMA_ENDPOINT`        | The full URL of the endpoint. Example: `http://ollama:11434/api/generate`.       |
 | `AI_PROMPT`              | The prompt template for AI-based translation services.                          |
 | `AI_USER_PROMPT`         | The user message template. Supports `{lineToTranslate}`, `{contextBefore}` and `{contextAfter}`. |
 
 #### **Proofreading**
 
-Proofreading is only available for the AI services above (OpenAI, Anthropic, Gemini, DeepSeek, Mistral, xAI, LocalAI), and only for a `service_type` entry that supports it. It uses two more settings, shared across all AI services the same way `AI_PROMPT` and `AI_USER_PROMPT` are. These are configured through **Settings > Services > Request Settings** in the web interface, or through their environment variables:
+Proofreading is only available for the AI services above (OpenAI, OpenRouter, Anthropic, Gemini, DeepSeek, Mistral, xAI, Custom AI and Ollama), and only for a `service_type` entry that supports it. It uses two more settings, shared across all AI services the same way `AI_PROMPT` and `AI_USER_PROMPT` are. These are configured through **Settings > Services > Request Settings** in the web interface, or through their environment variables:
 
 | **Setting** | **Environment Variable** | **Default** |
 |-------------|--------------------------|-------------|

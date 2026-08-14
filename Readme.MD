@@ -14,7 +14,9 @@ https://github.com/user-attachments/assets/be753d77-ca53-4867-adea-363145613d2b
 Lingarr now offers multiple services for automated translation:
 
 - **[LibreTranslate](https://libretranslate.com)**
-- **Local AI (with Ollama, or any other OpenAPI compatible model/router)**
+- **Custom AI (any OpenAI-compatible or generate-compatible endpoint)**
+- **[Ollama](https://ollama.com/)**
+- **[OpenRouter](https://openrouter.ai/)**
 - **[DeepL](https://www.deepl.com/)**  (without pt-BR)
 - **[Anthropic](https://www.anthropic.com/)**
 - **[OpenAI](https://openai.com/)**
