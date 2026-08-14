@@ -20,6 +20,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
     private readonly string _modelSettingKey;
     private readonly string _apiKeySettingKey;
     private readonly string _requestTemplateSettingKey;
+    private readonly bool _requireSupportedParameters;
     private string? _model;
     private string? _apiKey;
     private string? _requestTemplate;
@@ -48,7 +49,8 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
         string modelSettingKey = SettingKeys.Translation.OpenAi.Model,
         string apiKeySettingKey = SettingKeys.Translation.OpenAi.ApiKey,
         string requestTemplateSettingKey = SettingKeys.Translation.OpenAi.RequestTemplate,
-        HttpClient? modelsHttpClient = null)
+        HttpClient? modelsHttpClient = null,
+        bool requireSupportedParameters = false)
         : base(settings, logger, languageCodeService)
     {
         _httpClient = httpClient ?? new HttpClient();
@@ -59,6 +61,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
         _modelSettingKey = modelSettingKey;
         _apiKeySettingKey = apiKeySettingKey;
         _requestTemplateSettingKey = requestTemplateSettingKey;
+        _requireSupportedParameters = requireSupportedParameters;
     }
 
     /// <summary>
@@ -272,7 +275,13 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             throw new TranslationException($"No completion choices returned from {_serviceName}");
         }
 
-        return completionResponse.Choices[0].Message.Content;
+        var choice = completionResponse.Choices[0];
+        if (string.Equals(choice.FinishReason, "error", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new TranslationException($"{_serviceName} returned a partial response after an upstream error");
+        }
+
+        return choice.Message.Content;
     }
 
     /// <summary>
@@ -341,6 +350,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             json_schema = new
             {
                 name = "batch_translation_response",
+                strict = true,
                 schema = new
                 {
                     type = "object",
@@ -376,10 +386,15 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
 
         var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
         var bodyJson = _requestTemplateService.BuildRequestBody(_requestTemplate!, replacements);
-        bodyJson = _requestTemplateService.SetRequestFields(bodyJson, new Dictionary<string, object?>
+        var requestFields = new Dictionary<string, object?>
         {
             ["response_format"] = responseFormat
-        });
+        };
+        if (_requireSupportedParameters)
+        {
+            requestFields["provider"] = new { require_parameters = true };
+        }
+        bodyJson = _requestTemplateService.SetRequestFields(bodyJson, requestFields);
 
         var requestContent = new StringContent(
             bodyJson,
@@ -411,7 +426,13 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             throw new TranslationException($"No completion choices returned from {_serviceName}");
         }
         
-        var translatedJson = completionResponse.Choices[0].Message.Content;
+        var choice = completionResponse.Choices[0];
+        if (string.Equals(choice.FinishReason, "error", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new TranslationException($"{_serviceName} returned a partial batch response after an upstream error");
+        }
+
+        var translatedJson = choice.Message.Content;
         try
         {
             var responseWrapper = JsonSerializer.Deserialize<JsonElement>(translatedJson);

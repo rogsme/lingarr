@@ -169,7 +169,17 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         {
             try
             {
-                return await CompleteWithLocalAiApi(replacements, retry.Token);
+                return await CompleteWithLocalAiApi(replacements, linked.Token);
+            }
+            catch (HttpRequestException ex) when (IsRetryable(ex.StatusCode))
+            {
+                if (attempt == _maxRetries)
+                {
+                    throw new TranslationException($"Retry limit reached after {ex.StatusCode}.", ex);
+                }
+
+                await Task.Delay(delay, linked.Token).ConfigureAwait(false);
+                delay = TimeSpan.FromTicks(delay.Ticks * _retryDelayMultiplier);
             }
             catch (TranslationResponseException ex)
             {
@@ -220,6 +230,16 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
             try
             {
                 return await CompleteWithLocalAiApi(replacements, linked.Token);
+            }
+            catch (HttpRequestException ex) when (IsRetryable(ex.StatusCode))
+            {
+                if (attempt == _maxRetries)
+                {
+                    throw new TranslationException($"Retry limit reached after {ex.StatusCode}.", ex);
+                }
+
+                await Task.Delay(delay, linked.Token).ConfigureAwait(false);
+                delay = TimeSpan.FromTicks(delay.Ticks * _retryDelayMultiplier);
             }
             catch (TranslationResponseException ex)
             {
@@ -415,6 +435,11 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         if (!response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (IsRetryable(response.StatusCode))
+            {
+                throw new HttpRequestException(
+                    $"{_serviceName} returned {response.StatusCode}", null, response.StatusCode);
+            }
             _logger.LogError(
                 "{ServiceName} structured output batch request failed with status {StatusCode}: {ResponseContent}",
                 _serviceName, response.StatusCode,
@@ -474,6 +499,11 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         if (!response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (IsRetryable(response.StatusCode))
+            {
+                throw new HttpRequestException(
+                    $"{_serviceName} returned {response.StatusCode}", null, response.StatusCode);
+            }
             _logger.LogError(
                 "{ServiceName} JSON parsing batch request failed with status {StatusCode}: {ResponseContent}",
                 _serviceName, response.StatusCode,
@@ -541,6 +571,11 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         if (!response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (IsRetryable(response.StatusCode))
+            {
+                throw new HttpRequestException(
+                    $"{_serviceName} returned {response.StatusCode}", null, response.StatusCode);
+            }
             _logger.LogError(
                 "{ServiceName} generate API batch request failed with status {StatusCode}: {ResponseContent}",
                 _serviceName, response.StatusCode, responseContent);
@@ -599,6 +634,11 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         if (!response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (IsRetryable(response.StatusCode))
+            {
+                throw new HttpRequestException(
+                    $"{_serviceName} returned {response.StatusCode}", null, response.StatusCode);
+            }
             _logger.LogError(
                 "{ServiceName} generate API request failed with status {StatusCode}: {ResponseContent}",
                 _serviceName, response.StatusCode, responseContent);
@@ -632,12 +672,17 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         if (!response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (IsRetryable(response.StatusCode))
+            {
+                throw new HttpRequestException(
+                    $"{_serviceName} returned {response.StatusCode}", null, response.StatusCode);
+            }
             _logger.LogError(
                 "{ServiceName} chat API request to {Endpoint} failed with status {StatusCode}: {ResponseContent}",
                 _serviceName, _endpoint,
                 response.StatusCode, 
                 responseContent);
-            throw new TranslationResponseException(
+            throw new TranslationException(
                 $"{_serviceName} chat API request failed with status {response.StatusCode}: {responseContent}");
         }
 
@@ -651,4 +696,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
 
         return chatResponse.Choices[0].Message.Content;
     }
+
+    private static bool IsRetryable(HttpStatusCode? statusCode) =>
+        statusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable;
 }

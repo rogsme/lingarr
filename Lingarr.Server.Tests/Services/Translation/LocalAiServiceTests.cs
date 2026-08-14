@@ -136,6 +136,24 @@ public class LocalAiServiceTests
     }
 
     [Fact]
+    public async Task TranslateAsync_ShouldRetry_WhenGenerateApiIsUnavailable()
+    {
+        UseSettings(GenerateEndpoint);
+        SetupResponseSequence(
+            new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.ServiceUnavailable,
+                Content = new StringContent("{\"error\":\"loading model\"}", Encoding.UTF8, "application/json")
+            },
+            GenerateResponse("Hola"));
+
+        var result = await _service.TranslateAsync("Hello", "en", "es", null, null, CancellationToken.None);
+
+        Assert.Equal("Hola", result);
+        VerifyRequestsSent(2);
+    }
+
+    [Fact]
     public async Task TranslateAsync_ShouldUseOllamaSettings_WhenConfiguredForOllama()
     {
         var settings = new Dictionary<string, string>

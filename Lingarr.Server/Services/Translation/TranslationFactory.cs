@@ -90,7 +90,8 @@ public class TranslationFactory : ITranslationServiceFactory
                 modelSettingKey: SettingKeys.Translation.OpenRouter.Model,
                 apiKeySettingKey: SettingKeys.Translation.OpenRouter.ApiKey,
                 requestTemplateSettingKey: SettingKeys.Translation.OpenRouter.RequestTemplate,
-                modelsHttpClient: _serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient()
+                modelsHttpClient: _serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(),
+                requireSupportedParameters: true
             ),
 
             "anthropic" => new AnthropicService(
