@@ -239,6 +239,9 @@ public class StartupService : IHostedService
             { "OPENAI_MODEL", SettingKeys.Translation.OpenAi.Model },
             { "OPENAI_API_KEY", SettingKeys.Translation.OpenAi.ApiKey },
 
+            { "OPENROUTER_MODEL", SettingKeys.Translation.OpenRouter.Model },
+            { "OPENROUTER_API_KEY", SettingKeys.Translation.OpenRouter.ApiKey },
+
             { "ANTHROPIC_MODEL", SettingKeys.Translation.Anthropic.Model },
             { "ANTHROPIC_API_KEY", SettingKeys.Translation.Anthropic.ApiKey },
             { "ANTHROPIC_VERSION", SettingKeys.Translation.Anthropic.Version },
@@ -246,6 +249,10 @@ public class StartupService : IHostedService
             { "LOCAL_AI_MODEL", SettingKeys.Translation.LocalAi.Model },
             { "LOCAL_AI_API_KEY", SettingKeys.Translation.LocalAi.ApiKey },
             { "LOCAL_AI_ENDPOINT", SettingKeys.Translation.LocalAi.Endpoint },
+
+            { "OLLAMA_MODEL", SettingKeys.Translation.Ollama.Model },
+            { "OLLAMA_API_KEY", SettingKeys.Translation.Ollama.ApiKey },
+            { "OLLAMA_ENDPOINT", SettingKeys.Translation.Ollama.Endpoint },
 
             { "GEMINI_MODEL", SettingKeys.Translation.Gemini.Model },
             { "GEMINI_API_KEY", SettingKeys.Translation.Gemini.ApiKey },

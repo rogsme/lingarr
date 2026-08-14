@@ -9,11 +9,11 @@ All AI services follow the same pattern: select the service, provide an API key,
 1. In the Lingarr web interface, go to **Settings > Services**.
 2. Select your AI service in the primary service dropdown, or click **Add fallback service** to use it as a fallback.
 3. Click the gear icon on the service row to configure its credentials.
-4. Enter the API key and choose a model. Self-hosted services such as [LocalAI](#localai) also ask for an endpoint.
+4. Enter the API key and choose a model. Self-hosted services such as [Custom AI](#custom-ai) and [Ollama](#ollama) also ask for an endpoint.
 
     When a service asks for an endpoint, enter the full URL that Lingarr sends requests to, including the path. A base URL such as `http://localhost:8080` will not work.
     
-    The path also determines which protocol is used:
+    For Custom AI and Ollama, the path also determines which protocol is used:
     
     - An endpoint ending in `completions` uses the OpenAI-compatible chat protocol. 
    Example: `http://ollama:11434/v1/chat/completions`.
@@ -52,7 +52,7 @@ Batch translation does not use the user prompt. The batch is sent as the user me
 
 Proofreading re-examines a completed translation. For each subtitle line it sends the source line and the existing translation together to the AI service and asks for a corrected translation, without translating from scratch.
 
-Only services that implement proofreading offer it: OpenAI, Anthropic, Gemini, DeepSeek, Mistral, xAI and LocalAI. LibreTranslate, DeepL, Google, Bing, Microsoft and Yandex do not support proofreading.
+Only services that implement proofreading offer it: OpenAI, OpenRouter, Anthropic, Gemini, DeepSeek, Mistral, xAI, Custom AI and Ollama. LibreTranslate, DeepL, Google, Bing, Microsoft and Yandex do not support proofreading.
 
 You can run it two ways:
 
@@ -83,6 +83,17 @@ Both accept the placeholders already listed above, plus two more:
 | `OPENAI_API_KEY` | The API key for authenticating with OpenAI.                 |
 | `AI_PROMPT` | The system prompt template.                                 |
 | `AI_USER_PROMPT` | The user message template.                                  |
+
+### OpenRouter
+
+OpenRouter uses an OpenAI-compatible API and provides models from multiple AI providers. Model identifiers include the provider prefix, for example `anthropic/claude-sonnet-4`.
+
+| **Environment Variable** | **Description**                                      |
+|--------------------------|------------------------------------------------------|
+| `OPENROUTER_MODEL` | The model to use for OpenRouter translations.         |
+| `OPENROUTER_API_KEY` | The API key for authenticating with OpenRouter.       |
+| `AI_PROMPT` | The system prompt template.                             |
+| `AI_USER_PROMPT` | The user message template.                             |
 
 ### Anthropic
 
@@ -130,14 +141,26 @@ Both accept the placeholders already listed above, plus two more:
 | `AI_PROMPT` | The system prompt template.                              |
 | `AI_USER_PROMPT` | The user message template.                               |
 
-### LocalAI
+### Custom AI
 
-LocalAI works with Ollama or any other OpenAI-compatible model or router.
+Custom AI uses the `localai` service identifier for compatibility with existing installations. It works with any OpenAI-compatible chat endpoint and continues to support generate endpoints used by older configurations.
 
 | **Environment Variable** | **Description**                                                                                                           |
 |--------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| `LOCAL_AI_MODEL` | The model to use for LocalAI translations.                                                                                |
-| `LOCAL_AI_API_KEY` | The API key for authenticating with LocalAI. This is optional, and only needed if the deployment requires authentication. |
-| `LOCAL_AI_ENDPOINT` | The full URL of the completion endpoint. Example: `http://ollama:11434/v1/chat/completions`.                              |
+| `LOCAL_AI_MODEL` | The model to use for Custom AI translations.                                                                              |
+| `LOCAL_AI_API_KEY` | The optional API key for authenticating with the endpoint.                                                                |
+| `LOCAL_AI_ENDPOINT` | The full URL of the endpoint. Example: `http://localhost:8080/v1/chat/completions`.                                        |
 | `AI_PROMPT` | The system prompt template.                                                                                               |
 | `AI_USER_PROMPT` | The user message template.                                                                                                |
+
+### Ollama
+
+Ollama supports its native generate endpoint and its OpenAI-compatible chat endpoint.
+
+| **Environment Variable** | **Description**                                                                                   |
+|--------------------------|---------------------------------------------------------------------------------------------------|
+| `OLLAMA_MODEL` | The model to use for Ollama translations.                                                         |
+| `OLLAMA_API_KEY` | The optional bearer token for an authenticated Ollama deployment or proxy.                        |
+| `OLLAMA_ENDPOINT` | The full URL of the endpoint. Example: `http://ollama:11434/api/generate`.                         |
+| `AI_PROMPT` | The system prompt template.                                                                        |
+| `AI_USER_PROMPT` | The user message template.                                                                         |

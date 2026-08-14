@@ -15,11 +15,17 @@ namespace Lingarr.Server.Services.Translation;
 
 public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTranslationService, IProofreadService
 {
-    private readonly string? _endpoint = "https://api.openai.com/v1/";
+    private readonly string _endpoint;
+    private readonly string _serviceName;
+    private readonly string _modelSettingKey;
+    private readonly string _apiKeySettingKey;
+    private readonly string _requestTemplateSettingKey;
+    private readonly bool _requireSupportedParameters;
     private string? _model;
     private string? _apiKey;
     private string? _requestTemplate;
     private readonly HttpClient _httpClient;
+    private readonly HttpClient _modelsHttpClient;
     private readonly IRequestTemplateService _requestTemplateService;
     private bool _initialized;
     private readonly SemaphoreSlim _initLock = new(1, 1);
@@ -37,11 +43,25 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
         ILogger<OpenAiService> logger,
         LanguageCodeService languageCodeService,
         IRequestTemplateService requestTemplateService,
-        HttpClient? httpClient = null)
+        HttpClient? httpClient = null,
+        string endpoint = "https://api.openai.com/v1/",
+        string serviceName = "OpenAI",
+        string modelSettingKey = SettingKeys.Translation.OpenAi.Model,
+        string apiKeySettingKey = SettingKeys.Translation.OpenAi.ApiKey,
+        string requestTemplateSettingKey = SettingKeys.Translation.OpenAi.RequestTemplate,
+        HttpClient? modelsHttpClient = null,
+        bool requireSupportedParameters = false)
         : base(settings, logger, languageCodeService)
     {
         _httpClient = httpClient ?? new HttpClient();
+        _modelsHttpClient = modelsHttpClient ?? new HttpClient();
         _requestTemplateService = requestTemplateService;
+        _endpoint = endpoint.TrimEnd('/') + "/";
+        _serviceName = serviceName;
+        _modelSettingKey = modelSettingKey;
+        _apiKeySettingKey = apiKeySettingKey;
+        _requestTemplateSettingKey = requestTemplateSettingKey;
+        _requireSupportedParameters = requireSupportedParameters;
     }
 
     /// <summary>
@@ -62,8 +82,8 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             if (_initialized) return;
 
             var settings = await _settings.GetSettings([
-                SettingKeys.Translation.OpenAi.Model,
-                SettingKeys.Translation.OpenAi.RequestTemplate,
+                _modelSettingKey,
+                _requestTemplateSettingKey,
                 SettingKeys.Translation.AiPrompt,
                 SettingKeys.Translation.AiUserPrompt,
                 SettingKeys.Translation.ProofreadPrompt,
@@ -75,15 +95,15 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
                 SettingKeys.Translation.LanguageCodeFormat
             ]);
 
-            _model = settings[SettingKeys.Translation.OpenAi.Model];
-            _apiKey = await _settings.GetEncryptedSetting(SettingKeys.Translation.OpenAi.ApiKey);
-            _requestTemplate = !string.IsNullOrEmpty(settings[SettingKeys.Translation.OpenAi.RequestTemplate])
-                ? settings[SettingKeys.Translation.OpenAi.RequestTemplate]
-                : _requestTemplateService.GetDefaultTemplate(SettingKeys.Translation.OpenAi.RequestTemplate);
+            _model = settings[_modelSettingKey];
+            _apiKey = await _settings.GetEncryptedSetting(_apiKeySettingKey);
+            _requestTemplate = !string.IsNullOrEmpty(settings[_requestTemplateSettingKey])
+                ? settings[_requestTemplateSettingKey]
+                : _requestTemplateService.GetDefaultTemplate(_requestTemplateSettingKey);
 
             if (string.IsNullOrEmpty(_model) || string.IsNullOrEmpty(_apiKey))
             {
-                throw new InvalidOperationException("OpenAI API key or model is not configured.");
+                throw new InvalidOperationException($"{_serviceName} API key or model is not configured.");
             }
 
             SetLanguageReplacements(sourceLanguage, targetLanguage, settings[SettingKeys.Translation.LanguageCodeFormat]);
@@ -154,7 +174,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
 
                 _logger.LogWarning(
                     "{ServiceName} received {StatusCode}. Retrying in {Delay}... (Attempt {Attempt}/{MaxRetries})",
-                    "OpenAI", ex.StatusCode, delay, attempt, _maxRetries);
+                    _serviceName, ex.StatusCode, delay, attempt, _maxRetries);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -162,8 +182,8 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred during OpenAI translation");
-                throw new TranslationException("Failed to translate using OpenAI", ex);
+                _logger.LogError(ex, "Error occurred during {ServiceName} translation", _serviceName);
+                throw new TranslationException($"Failed to translate using {_serviceName}", ex);
             }
         }
 
@@ -204,7 +224,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
 
                 _logger.LogWarning(
                     "{ServiceName} received {StatusCode}. Retrying in {Delay}... (Attempt {Attempt}/{MaxRetries})",
-                    "OpenAI", ex.StatusCode, delay, attempt, _maxRetries);
+                    _serviceName, ex.StatusCode, delay, attempt, _maxRetries);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -212,8 +232,8 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred during OpenAI proofread");
-                throw new TranslationException("Failed to proofread using OpenAI", ex);
+                _logger.LogError(ex, "Error occurred during {ServiceName} proofread", _serviceName);
+                throw new TranslationException($"Failed to proofread using {_serviceName}", ex);
             }
         }
 
@@ -237,25 +257,31 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             if (response.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable)
             {
                 throw new HttpRequestException(
-                    $"OpenAI returned {response.StatusCode}", null, response.StatusCode);
+                    $"{_serviceName} returned {response.StatusCode}", null, response.StatusCode);
             }
 
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "OpenAI API request failed with status {StatusCode}: {ResponseContent}",
-                response.StatusCode, responseContent);
+                "{ServiceName} API request failed with status {StatusCode}: {ResponseContent}",
+                _serviceName, response.StatusCode, responseContent);
             throw new TranslationException(
-                $"OpenAI API request failed with status {response.StatusCode}: {responseContent}");
+                $"{_serviceName} API request failed with status {response.StatusCode}: {responseContent}");
         }
 
         var completionResponse =
             await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(cancellationToken);
         if (completionResponse?.Choices == null || completionResponse.Choices.Count == 0)
         {
-            throw new TranslationException("No completion choices returned from OpenAI");
+            throw new TranslationException($"No completion choices returned from {_serviceName}");
         }
 
-        return completionResponse.Choices[0].Message.Content;
+        var choice = completionResponse.Choices[0];
+        if (string.Equals(choice.FinishReason, "error", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new TranslationException($"{_serviceName} returned a partial response after an upstream error");
+        }
+
+        return choice.Message.Content;
     }
 
     /// <summary>
@@ -297,7 +323,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
 
                 _logger.LogWarning(
                     "{ServiceName} received {StatusCode}. Retrying in {Delay}... (Attempt {Attempt}/{MaxRetries})",
-                    "OpenAI", ex.StatusCode, delay, attempt, _maxRetries);
+                    _serviceName, ex.StatusCode, delay, attempt, _maxRetries);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -324,6 +350,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             json_schema = new
             {
                 name = "batch_translation_response",
+                strict = true,
                 schema = new
                 {
                     type = "object",
@@ -359,10 +386,15 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
 
         var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
         var bodyJson = _requestTemplateService.BuildRequestBody(_requestTemplate!, replacements);
-        bodyJson = _requestTemplateService.SetRequestFields(bodyJson, new Dictionary<string, object?>
+        var requestFields = new Dictionary<string, object?>
         {
             ["response_format"] = responseFormat
-        });
+        };
+        if (_requireSupportedParameters)
+        {
+            requestFields["provider"] = new { require_parameters = true };
+        }
+        bodyJson = _requestTemplateService.SetRequestFields(bodyJson, requestFields);
 
         var requestContent = new StringContent(
             bodyJson,
@@ -376,25 +408,31 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             if (response.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable)
             {
                 throw new HttpRequestException(
-                    $"Batch translation using OpenAI API failed with {response.StatusCode}.",
+                    $"Batch translation using {_serviceName} API failed with {response.StatusCode}.",
                     null, response.StatusCode);
             }
 
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             _logger.LogError(
-                "OpenAI batch API request failed with status {StatusCode}: {ResponseContent}",
-                response.StatusCode, responseContent);
+                "{ServiceName} batch API request failed with status {StatusCode}: {ResponseContent}",
+                _serviceName, response.StatusCode, responseContent);
             throw new TranslationException(
-                $"OpenAI batch API request failed with status {response.StatusCode}: {responseContent}");
+                $"{_serviceName} batch API request failed with status {response.StatusCode}: {responseContent}");
         }
 
         var completionResponse = await response.Content.ReadFromJsonAsync<ChatCompletionResponse>(cancellationToken);
         if (completionResponse?.Choices == null || completionResponse.Choices.Count == 0)
         {
-            throw new TranslationException("No completion choices returned from OpenAI");
+            throw new TranslationException($"No completion choices returned from {_serviceName}");
         }
         
-        var translatedJson = completionResponse.Choices[0].Message.Content;
+        var choice = completionResponse.Choices[0];
+        if (string.Equals(choice.FinishReason, "error", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new TranslationException($"{_serviceName} returned a partial batch response after an upstream error");
+        }
+
+        var translatedJson = choice.Message.Content;
         try
         {
             var responseWrapper = JsonSerializer.Deserialize<JsonElement>(translatedJson);
@@ -423,25 +461,24 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
     public override async Task<ModelsResponse> GetModels()
     {
         var apiKey = await _settings.GetEncryptedSetting(
-            SettingKeys.Translation.OpenAi.ApiKey
+            _apiKeySettingKey
         );
 
         if (string.IsNullOrEmpty(apiKey))
         {
             return new ModelsResponse
             {
-                Message = "OpenAI API key is not configured."
+                Message = $"{_serviceName} API key is not configured."
             };
         }
 
         try
         {
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-
             var requestUrl = $"{_endpoint}models";
-            var response = await client.GetAsync(requestUrl);
+            using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            var response = await _modelsHttpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -461,7 +498,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             {
                 return new ModelsResponse
                 {
-                    Message = "No models data returned from OpenAI API."
+                    Message = $"No models data returned from {_serviceName} API."
                 };
             }
 
@@ -480,18 +517,18 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "HTTP error fetching models from OpenAI API");
+            _logger.LogError(ex, "HTTP error fetching models from {ServiceName} API", _serviceName);
             return new ModelsResponse
             {
-                Message = $"HTTP error fetching models from OpenAI API: {ex.Message}"
+                Message = $"HTTP error fetching models from {_serviceName} API: {ex.Message}"
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching models from OpenAI API");
+            _logger.LogError(ex, "Error fetching models from {ServiceName} API", _serviceName);
             return new ModelsResponse
             {
-                Message = $"Error fetching models from OpenAI API: {ex.Message}"
+                Message = $"Error fetching models from {_serviceName} API: {ex.Message}"
             };
         }
     }

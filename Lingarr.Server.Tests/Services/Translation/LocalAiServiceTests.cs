@@ -135,6 +135,65 @@ public class LocalAiServiceTests
         VerifyRequestsSent(1);
     }
 
+    [Fact]
+    public async Task TranslateAsync_ShouldRetry_WhenGenerateApiIsUnavailable()
+    {
+        UseSettings(GenerateEndpoint);
+        SetupResponseSequence(
+            new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.ServiceUnavailable,
+                Content = new StringContent("{\"error\":\"loading model\"}", Encoding.UTF8, "application/json")
+            },
+            GenerateResponse("Hola"));
+
+        var result = await _service.TranslateAsync("Hello", "en", "es", null, null, CancellationToken.None);
+
+        Assert.Equal("Hola", result);
+        VerifyRequestsSent(2);
+    }
+
+    [Fact]
+    public async Task TranslateAsync_ShouldUseOllamaSettings_WhenConfiguredForOllama()
+    {
+        var settings = new Dictionary<string, string>
+        {
+            { SettingKeys.Translation.Ollama.Model, "aya-expanse" },
+            { SettingKeys.Translation.Ollama.Endpoint, GenerateEndpoint },
+            { SettingKeys.Translation.Ollama.ChatRequestTemplate, "" },
+            { SettingKeys.Translation.Ollama.GenerateRequestTemplate, "" },
+            { SettingKeys.Translation.AiPrompt, "Translate from {sourceLanguage} to {targetLanguage}" },
+            { SettingKeys.Translation.AiUserPrompt, "{lineToTranslate}" },
+            { SettingKeys.Translation.RequestTimeout, "5" },
+            { SettingKeys.Translation.MaxRetries, "3" },
+            { SettingKeys.Translation.RetryDelay, "0" },
+            { SettingKeys.Translation.RetryDelayMultiplier, "1" },
+            { SettingKeys.Translation.LanguageCodeFormat, "false" }
+        };
+        _settingsMock.Setup(settingService => settingService.GetSettings(It.IsAny<IEnumerable<string>>()))
+            .ReturnsAsync(settings);
+        _settingsMock.Setup(settingService => settingService.GetEncryptedSetting(SettingKeys.Translation.Ollama.ApiKey))
+            .ReturnsAsync(string.Empty);
+        SetupResponse(() => GenerateResponse("Hola"));
+        var service = new LocalAiService(
+            _settingsMock.Object,
+            new HttpClient(_httpMessageHandlerMock.Object),
+            _loggerMock.Object,
+            new LanguageCodeService(),
+            new RequestTemplateService(),
+            serviceName: "Ollama",
+            modelSettingKey: SettingKeys.Translation.Ollama.Model,
+            endpointSettingKey: SettingKeys.Translation.Ollama.Endpoint,
+            apiKeySettingKey: SettingKeys.Translation.Ollama.ApiKey,
+            chatRequestTemplateSettingKey: SettingKeys.Translation.Ollama.ChatRequestTemplate,
+            generateRequestTemplateSettingKey: SettingKeys.Translation.Ollama.GenerateRequestTemplate);
+
+        var result = await service.TranslateAsync("Hello", "en", "es", null, null, CancellationToken.None);
+
+        Assert.Equal("Hola", result);
+        VerifyRequestsSent(1);
+    }
+
     private static List<BatchSubtitleItem> Batch() =>
     [
         new() { Position = 1, Line = "Hello" },

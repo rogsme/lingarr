@@ -102,6 +102,63 @@ public class MigrationTests
     }
 
     [Fact]
+    public async Task Sqlite_OpenRouterAndOllamaMigration_PreservesPluginRowsAndCleansSelectionOnRollback()
+    {
+        var dbPath = Path.Combine(Path.GetTempPath(), $"lingarr_test_{Guid.NewGuid()}.db");
+        try
+        {
+            var connectionString = $"Data Source={dbPath}";
+            var services = new ServiceCollection();
+            services.AddFluentMigrator(connectionString, "sqlite");
+            var serviceProvider = services.BuildServiceProvider();
+
+            using var scope = serviceProvider.CreateScope();
+            var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+            runner.MigrateUp(18);
+
+            await using var connection = new SqliteConnection(connectionString);
+            await connection.OpenAsync(TestContext.Current.CancellationToken);
+            await using (var insert = connection.CreateCommand())
+            {
+                insert.CommandText =
+                    "INSERT INTO settings (key, value, provider) VALUES ('openrouter_api_key', 'plugin-value', 'external-openrouter')";
+                await insert.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+            }
+
+            runner.MigrateUp();
+            await using (var select = connection.CreateCommand())
+            {
+                select.CommandText = "SELECT value FROM settings WHERE key = 'openrouter_api_key'";
+                Assert.Equal("plugin-value", await select.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+            }
+
+            await using (var selectProvider = connection.CreateCommand())
+            {
+                selectProvider.CommandText =
+                    "UPDATE settings SET value = '[\"openrouter\",\"ollama\"]' WHERE key = 'service_type'";
+                await selectProvider.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+            }
+
+            runner.MigrateDown(18);
+            await using (var selectService = connection.CreateCommand())
+            {
+                selectService.CommandText = "SELECT value FROM settings WHERE key = 'service_type'";
+                Assert.Equal("[\"libretranslate\"]", await selectService.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+            }
+            await using (var selectPlugin = connection.CreateCommand())
+            {
+                selectPlugin.CommandText = "SELECT value FROM settings WHERE key = 'openrouter_api_key'";
+                Assert.Equal("plugin-value", await selectPlugin.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+            }
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            if (File.Exists(dbPath)) File.Delete(dbPath);
+        }
+    }
+
+    [Fact]
     public async Task MySql_MigrationsRunSuccessfully()
     {
         await using var container = new MySqlBuilder("mysql:latest")

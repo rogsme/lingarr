@@ -16,10 +16,13 @@ export const SETTINGS = {
     AUTOMATION_ENABLED: 'automation_enabled',
     TRANSLATION_SCHEDULE: 'translation_schedule',
     OPENAI_MODEL: 'openai_model',
+    OPENROUTER_MODEL: 'openrouter_model',
     ANTHROPIC_MODEL: 'anthropic_model',
     ANTHROPIC_VERSION: 'anthropic_version',
     LOCAL_AI_ENDPOINT: 'local_ai_endpoint',
     LOCAL_AI_MODEL: 'local_ai_model',
+    OLLAMA_ENDPOINT: 'ollama_endpoint',
+    OLLAMA_MODEL: 'ollama_model',
     GEMINI_MODEL: 'gemini_model',
     DEEPSEEK_MODEL: 'deepseek_model',
     MISTRAL_MODEL: 'mistral_model',
@@ -59,9 +62,12 @@ export const SETTINGS = {
     TELEMETRY_ENABLED: 'telemetry_enabled',
     NAVIGATE_TO_DETAILS_ON_REQUEST: 'navigate_to_details_on_request',
     OPENAI_REQUEST_TEMPLATE: 'openai_request_template',
+    OPENROUTER_REQUEST_TEMPLATE: 'openrouter_request_template',
     ANTHROPIC_REQUEST_TEMPLATE: 'anthropic_request_template',
     LOCAL_AI_CHAT_REQUEST_TEMPLATE: 'local_ai_chat_request_template',
     LOCAL_AI_GENERATE_REQUEST_TEMPLATE: 'local_ai_generate_request_template',
+    OLLAMA_CHAT_REQUEST_TEMPLATE: 'ollama_chat_request_template',
+    OLLAMA_GENERATE_REQUEST_TEMPLATE: 'ollama_generate_request_template',
     DEEPSEEK_REQUEST_TEMPLATE: 'deepseek_request_template',
     GEMINI_REQUEST_TEMPLATE: 'gemini_request_template',
     MISTRAL_REQUEST_TEMPLATE: 'mistral_request_template',
@@ -86,10 +92,13 @@ export interface ISettings {
     sonarr_settings_completed: string
     radarr_settings_completed: string
     openai_model: string
+    openrouter_model: string
     anthropic_model: string
     anthropic_version: string
     local_ai_endpoint: string
     local_ai_model: string
+    ollama_endpoint: string
+    ollama_model: string
     gemini_model: string
     deepseek_model: string
     mistral_model: string
@@ -129,9 +138,12 @@ export interface ISettings {
     telemetry_enabled: string
     navigate_to_details_on_request: string
     openai_request_template: string
+    openrouter_request_template: string
     anthropic_request_template: string
     local_ai_chat_request_template: string
     local_ai_generate_request_template: string
+    ollama_chat_request_template: string
+    ollama_generate_request_template: string
     deepseek_request_template: string
     gemini_request_template: string
     mistral_request_template: string
@@ -147,6 +159,7 @@ export const ENCRYPTED_SETTINGS = {
     RADARR_API_KEY: 'radarr_api_key',
     SONARR_API_KEY: 'sonarr_api_key',
     OPENAI_API_KEY: 'openai_api_key',
+    OPENROUTER_API_KEY: 'openrouter_api_key',
     ANTHROPIC_API_KEY: 'anthropic_api_key',
     GEMINI_API_KEY: 'gemini_api_key',
     DEEPSEEK_API_KEY: 'deepseek_api_key',
@@ -155,6 +168,7 @@ export const ENCRYPTED_SETTINGS = {
     DEEPL_API_KEY: 'deepl_api_key',
     LIBRETRANSLATE_API_KEY: 'libretranslate_api_key',
     LOCAL_AI_API_KEY: 'local_ai_api_key',
+    OLLAMA_API_KEY: 'ollama_api_key',
 } as const
 
 export interface IEncryptedSettings {
@@ -162,6 +176,7 @@ export interface IEncryptedSettings {
     radarr_api_key: string
     sonarr_api_key: string
     openai_api_key: string
+    openrouter_api_key: string
     anthropic_api_key: string
     gemini_api_key: string
     deepseek_api_key: string
@@ -170,13 +185,16 @@ export interface IEncryptedSettings {
     deepl_api_key: string
     libretranslate_api_key: string
     local_ai_api_key: string
+    ollama_api_key: string
 }
 
 export const SERVICE_TYPE = {
     LIBRETRANSLATE: 'libretranslate',
     OPENAI: 'openai',
+    OPENROUTER: 'openrouter',
     ANTHROPIC: 'anthropic',
     LOCALAI: 'localai',
+    OLLAMA: 'ollama',
     DEEPL: 'deepl',
     GEMINI: 'gemini',
     DEEPSEEK: 'deepseek',
