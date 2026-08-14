@@ -28,7 +28,7 @@ dotnet test Lingarr.slnx --no-build --configuration Release --verbosity normal -
 - `Lingarr.Migrations/` owns schema and seed changes. `Lingarr.Client/` is the Vue 3/Pinia/Tailwind SPA; `Lingarr.Docs/` is a separate VitePress site.
 - The production Dockerfile builds the client and copies `dist/` into `Lingarr.Server/wwwroot`. In development, Vite serves port `9876` and proxies `/api` and `/signalr` to `VITE_BASE_SERVER_URL` (default `Lingarr.Server:9876`); Compose exposes the backend as host port `9877`.
 - `DB_CONNECTION` is required at server startup and accepts `mysql`, `postgres`, `postgresql`, or `sqlite`. Migrations run automatically before controllers are mapped.
-- `docker-compose.dev.yml` uses an external network named `lingarr`; create it once before `docker compose -f docker-compose.dev.yml up -d --build`. Client source hot-reloads, but backend changes require rebuilding `Lingarr.Server`.
+- `docker-compose.dev.yml` runs two services (`Lingarr.Server` with SQLite, `Lingarr.Client` via Vite); start with `just up` or `docker compose -f docker-compose.dev.yml up -d --build`. Client source hot-reloads, but backend changes require rebuilding `Lingarr.Server` (`just rebuild`).
 
 ## Change Traps
 

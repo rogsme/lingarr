@@ -19,8 +19,9 @@ npm run lint      # oxlint
 npm run format    # oxfmt
 npm run build     # vue-tsc type check + vite build
 
-# Full dev environment (backend, frontend, DBs, LibreTranslate, Sonarr/Radarr)
-docker-compose -f docker-compose.dev.yml up -d
+# Dev environment (backend with SQLite + frontend) — see justfile for all recipes
+just up           # docker compose -f docker-compose.dev.yml up -d --build
+just rebuild      # rebuild backend after C# changes
 ```
 
 Dev URLs: frontend http://localhost:9876 (hot reload), backend/Swagger http://localhost:9877/swagger, Hangfire dashboard http://localhost:9877/hangfire. The frontend proxies `/api` and `/signalr` to the backend (vite.config.ts). The backend runs in Docker and must be rebuilt after changes; the Vite client hot-reloads.

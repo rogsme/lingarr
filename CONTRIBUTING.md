@@ -44,9 +44,9 @@ This document provides guidelines and instructions for contributing to the proje
 ## Development Setup
 
 ### Prerequisites
-- .NET SDK (for build scripts)
 - Docker (for running the application)
-- PowerShell (for build scripts)
+- .NET SDK (for running tests)
+- [just](https://github.com/casey/just) (optional, for the dev task runner)
 
 ### Getting Started
 1. Fork the repository on GitHub
@@ -100,24 +100,23 @@ cd Lingarr.Client && npm run lint
 These run automatically on each commit if you enabled the pre-commit hooks (step 4 above).
 
 ### Development
-Navigate to the root directory and start up the project:
+From the root directory, start the dev environment (backend + frontend, SQLite database):
 ```bash
-docker-compose -f .\docker-compose.dev.yml up -d
+just up
+# or without just:
+docker compose -f docker-compose.dev.yml up -d --build
 ```
-Configure and sync with Sonarr and Radarr to create test data.   
-The frontend supports hot reload while the backend needs to be rebuilt each time a change has been made.
+The frontend hot-reloads; after backend changes run `just rebuild`. Run `just` to list all available recipes.
+
+The dev environment uses SQLite — no database container needed. MySQL and PostgreSQL are covered by `Lingarr.Migrations.Tests` (via Testcontainers).
+
 ### Services:
 
-| Service        | URL                                           |
-|----------------|-----------------------------------------------|
-| Lingarr        | http://localhost:9876                         |
-| Swagger        | http://localhost:9877/swagger/index.html      |
-| Hangfire       | http://localhost:9877/hangfire                |
-| Docs           | http://localhost:9879                         |
-| phpmyadmin     | http://localhost:9878                         |
-| LibreTranslate | http://localhost:5000                         |
-| sonarr         | http://localhost:8989                         |
-| radarr         | http://localhost:7878                         |
+| Service  | URL                                      |
+|----------|------------------------------------------|
+| Lingarr  | http://localhost:9876                    |
+| Swagger  | http://localhost:9877/swagger/index.html |
+| Hangfire | http://localhost:9877/hangfire           |
 
 ## Database Migrations
 
