@@ -126,6 +126,7 @@ const languageCodeFormat = computed({
 
 const templateMap: Record<string, keyof ISettings> = {
     [SERVICE_TYPE.OPENAI]: SETTINGS.OPENAI_REQUEST_TEMPLATE,
+    [SERVICE_TYPE.OPENROUTER]: SETTINGS.OPENROUTER_REQUEST_TEMPLATE,
     [SERVICE_TYPE.ANTHROPIC]: SETTINGS.ANTHROPIC_REQUEST_TEMPLATE,
     [SERVICE_TYPE.LOCALAI]: SETTINGS.LOCAL_AI_CHAT_REQUEST_TEMPLATE,
     [SERVICE_TYPE.GEMINI]: SETTINGS.GEMINI_REQUEST_TEMPLATE,
@@ -134,17 +135,19 @@ const templateMap: Record<string, keyof ISettings> = {
     [SERVICE_TYPE.XAI]: SETTINGS.XAI_REQUEST_TEMPLATE
 }
 
-const localAiEndpoint = computed(
-    () => settingsStore.getSetting(SETTINGS.LOCAL_AI_ENDPOINT) as string
-)
-const isLocalAiGenerate = computed(() => {
-    const endpoint = localAiEndpoint.value || ''
-    return !endpoint.trimEnd().replace(/\/$/, '').endsWith('completions')
-})
-
 const activeTemplateKey = computed((): keyof ISettings | '' => {
-    if (serviceType.value === SERVICE_TYPE.LOCALAI) {
-        return isLocalAiGenerate.value
+    if ([SERVICE_TYPE.LOCALAI, SERVICE_TYPE.OLLAMA].includes(serviceType.value as 'localai' | 'ollama')) {
+        const isOllama = serviceType.value === SERVICE_TYPE.OLLAMA
+        const endpoint = settingsStore.getSetting(
+            isOllama ? SETTINGS.OLLAMA_ENDPOINT : SETTINGS.LOCAL_AI_ENDPOINT
+        ) as string
+        const useGenerate = !endpoint?.trimEnd().replace(/\/$/, '').endsWith('completions')
+        if (isOllama) {
+            return useGenerate
+                ? SETTINGS.OLLAMA_GENERATE_REQUEST_TEMPLATE
+                : SETTINGS.OLLAMA_CHAT_REQUEST_TEMPLATE
+        }
+        return useGenerate
             ? SETTINGS.LOCAL_AI_GENERATE_REQUEST_TEMPLATE
             : SETTINGS.LOCAL_AI_CHAT_REQUEST_TEMPLATE
     }
@@ -204,10 +207,13 @@ const presetOptions = ref<{ value: string; label: string }[]>([])
 
 const presetLabelMap: Record<string, string> = {
     openai_request_template: 'OpenAI Chat',
+    openrouter_request_template: 'OpenRouter Chat',
     anthropic_request_template: 'Anthropic Messages',
     gemini_request_template: 'Gemini Content',
-    local_ai_generate_request_template: 'Ollama Generate',
-    local_ai_chat_request_template: 'LocalAI Chat',
+    local_ai_generate_request_template: 'Custom AI Generate',
+    local_ai_chat_request_template: 'Custom AI Chat',
+    ollama_generate_request_template: 'Ollama Generate',
+    ollama_chat_request_template: 'Ollama Chat',
     deepseek_request_template: 'DeepSeek Chat',
     mistral_request_template: 'Mistral Chat',
     xai_request_template: 'xAI Chat'

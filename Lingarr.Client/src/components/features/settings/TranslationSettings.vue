@@ -14,13 +14,17 @@
                     SERVICE_TYPE.GEMINI,
                     SERVICE_TYPE.LOCALAI,
                     SERVICE_TYPE.MISTRAL,
+                    SERVICE_TYPE.OLLAMA,
                     SERVICE_TYPE.OPENAI,
+                    SERVICE_TYPE.OPENROUTER,
                     SERVICE_TYPE.XAI
                 ].includes(
                     serviceType as
                         | 'openai'
                         | 'anthropic'
                         | 'localai'
+                        | 'ollama'
+                        | 'openrouter'
                         | 'gemini'
                         | 'deepseek'
                         | 'mistral'
