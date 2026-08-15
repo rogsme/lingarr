@@ -235,6 +235,7 @@ public class StartupService : IHostedService
             { "AI_USER_PROMPT", SettingKeys.Translation.AiUserPrompt },
             { "PROOFREAD_PROMPT", SettingKeys.Translation.ProofreadPrompt },
             { "PROOFREAD_USER_PROMPT", SettingKeys.Translation.ProofreadUserPrompt },
+            { "AUTO_PROOFREAD", SettingKeys.Translation.AutoProofread },
 
             { "OPENAI_MODEL", SettingKeys.Translation.OpenAi.Model },
             { "OPENAI_API_KEY", SettingKeys.Translation.OpenAi.ApiKey },

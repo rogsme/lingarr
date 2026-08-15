@@ -334,6 +334,20 @@ public class TranslationJob
         await _translationRequestService.UpdateActiveCount();
         await _progressService.Emit(translationRequest, 100);
         await _scheduleService.UpdateJobState(jobName, JobStatus.Succeeded.GetDisplayName());
+
+        if (await _settings.GetSetting(SettingKeys.Translation.AutoProofread) == "true")
+        {
+            var proofreadStatus = await _translationRequestService.GetProofreadStatus();
+            if (proofreadStatus.Supported)
+            {
+                await _translationRequestService.ProofreadTranslationRequest(translationRequest);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Auto proofread is enabled but no configured translation service supports proofreading.");
+            }
+        }
     }
 
     private async Task HandleCancellation(string jobName, TranslationRequest request)
