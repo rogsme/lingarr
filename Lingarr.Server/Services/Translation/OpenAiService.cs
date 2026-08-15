@@ -386,7 +386,7 @@ public class OpenAiService : BaseLanguageService, ITranslationService, IBatchTra
             }
         };
 
-        var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
+        var replacements = GetBatchReplacements(_model!, subtitleBatch);
         var bodyJson = _requestTemplateService.BuildRequestBody(_requestTemplate!, replacements);
         var requestFields = new Dictionary<string, object?>
         {

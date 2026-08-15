@@ -360,7 +360,7 @@ public class XAiService : BaseLanguageService, ITranslationService, IBatchTransl
             }
         };
 
-        var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
+        var replacements = GetBatchReplacements(_model!, subtitleBatch);
         var bodyJson = _requestTemplateService.BuildRequestBody(_requestTemplate!, replacements);
         bodyJson = _requestTemplateService.SetRequestFields(bodyJson, new Dictionary<string, object?>
         {

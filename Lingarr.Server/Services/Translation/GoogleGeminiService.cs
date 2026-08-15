@@ -395,7 +395,7 @@ public class GoogleGeminiService : BaseLanguageService, ITranslationService, IBa
         CancellationToken cancellationToken)
     {
         var endpoint = $"{_endpoint}/models/{_model}:generateContent?key={_apiKey}";
-        var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
+        var replacements = GetBatchReplacements(_model!, subtitleBatch);
         var bodyJson = _requestTemplateService.BuildRequestBody(_requestTemplate!, replacements);
         bodyJson = _requestTemplateService.SetRequestFields(bodyJson, new Dictionary<string, object?>
         {

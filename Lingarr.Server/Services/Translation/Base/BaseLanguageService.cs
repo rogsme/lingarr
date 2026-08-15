@@ -63,7 +63,11 @@ public abstract class BaseLanguageService : BaseTranslationService
         return replacements;
     }
 
-    protected Dictionary<string, string> GetBatchReplacements(string model, string serializedBatch)
+    private const string BatchContextInstruction =
+        "\nItems marked with \"context\": true are already translated and are included only as reference " +
+        "for consistent names, tone and terminology. Do not retranslate them and do not include them in your output.";
+
+    protected Dictionary<string, string> GetBatchReplacements(string model, List<BatchSubtitleItem> subtitleBatch)
     {
         var replacements = new Dictionary<string, string>(_replacements)
         {
@@ -72,8 +76,13 @@ public abstract class BaseLanguageService : BaseTranslationService
             ["contextBefore"] = string.Empty,
             ["contextAfter"] = string.Empty
         };
-        replacements["systemPrompt"] = ReplacePlaceholders(_prompt, replacements);
-        replacements["userMessage"] = serializedBatch;
+        var systemPrompt = ReplacePlaceholders(_prompt, replacements);
+        if (subtitleBatch.Any(item => item.IsContext == true))
+        {
+            systemPrompt += BatchContextInstruction;
+        }
+        replacements["systemPrompt"] = systemPrompt;
+        replacements["userMessage"] = JsonSerializer.Serialize(subtitleBatch);
         return replacements;
     }
 
