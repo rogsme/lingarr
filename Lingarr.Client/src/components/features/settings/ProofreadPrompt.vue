@@ -17,6 +17,14 @@
                 </ToggleButton>
 
                 <div class="flex flex-col space-x-2">
+                    <span class="font-semibold">Proofread model</span>
+                    Optionally use a different (typically stronger) model when proofreading. Must be
+                    a valid model name for the configured translation service. Leave empty to
+                    proofread with the same model used for translation.
+                </div>
+                <InputComponent v-model="proofreadModel" />
+
+                <div class="flex flex-col space-x-2">
                     <span class="font-semibold">Proofread system prompt</span>
                     Define the AI's behavior when comparing a translated line against its source
                     line.
@@ -54,11 +62,20 @@ import CardComponent from '@/components/common/CardComponent.vue'
 import TextAreaComponent from '@/components/common/TextAreaComponent.vue'
 import SaveNotification from '@/components/common/SaveNotification.vue'
 import ToggleButton from '@/components/common/ToggleButton.vue'
+import InputComponent from '@/components/common/InputComponent.vue'
 
 const settingsStore = useSettingStore()
 const saveNotification = ref<InstanceType<typeof SaveNotification> | null>(null)
 const isSystemPromptValid = ref(false)
 const isUserPromptValid = ref(false)
+
+const proofreadModel = computed({
+    get: () => (settingsStore.getSetting(SETTINGS.PROOFREAD_MODEL) as string) ?? '',
+    set: (newValue: string) => {
+        settingsStore.updateSetting(SETTINGS.PROOFREAD_MODEL, newValue, true)
+        saveNotification.value?.show()
+    }
+})
 
 const autoProofread = computed({
     get: () => (settingsStore.getSetting(SETTINGS.AUTO_PROOFREAD) as string) ?? 'false',

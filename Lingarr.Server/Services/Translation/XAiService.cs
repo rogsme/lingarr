@@ -68,6 +68,7 @@ public class XAiService : BaseLanguageService, ITranslationService, IBatchTransl
                 SettingKeys.Translation.AiUserPrompt,
                 SettingKeys.Translation.ProofreadPrompt,
                 SettingKeys.Translation.ProofreadUserPrompt,
+                SettingKeys.Translation.ProofreadModel,
                 SettingKeys.Translation.RequestTimeout,
                 SettingKeys.Translation.MaxRetries,
                 SettingKeys.Translation.RetryDelay,
@@ -91,6 +92,7 @@ public class XAiService : BaseLanguageService, ITranslationService, IBatchTransl
             _userPrompt = settings[SettingKeys.Translation.AiUserPrompt];
             _proofreadPrompt = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadPrompt);
             _proofreadUserPrompt = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadUserPrompt);
+            _proofreadModel = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadModel);
 
             var requestTimeout = int.TryParse(settings[SettingKeys.Translation.RequestTimeout],
                 out var timeOut)

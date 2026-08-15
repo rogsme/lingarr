@@ -32,6 +32,7 @@ export const SETTINGS = {
     PROOFREAD_PROMPT: 'proofread_prompt',
     PROOFREAD_USER_PROMPT: 'proofread_user_prompt',
     AUTO_PROOFREAD: 'auto_proofread',
+    PROOFREAD_MODEL: 'proofread_model',
     THEME: 'theme',
     LOCALE: 'locale',
     MOVIE_AGE_THRESHOLD: 'movie_age_threshold',
@@ -109,6 +110,7 @@ export interface ISettings {
     proofread_prompt: string
     proofread_user_prompt: string
     auto_proofread: string
+    proofread_model: string
     movie_age_threshold: string
     show_age_threshold: string
     fix_overlapping_subtitles: string

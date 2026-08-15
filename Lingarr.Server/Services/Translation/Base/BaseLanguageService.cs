@@ -17,6 +17,7 @@ public abstract class BaseLanguageService : BaseTranslationService
     protected string? _userPrompt;
     protected string? _proofreadPrompt;
     protected string? _proofreadUserPrompt;
+    protected string? _proofreadModel;
     protected Dictionary<string, string> _replacements;
 
     protected BaseLanguageService(
@@ -83,7 +84,7 @@ public abstract class BaseLanguageService : BaseTranslationService
     {
         var replacements = new Dictionary<string, string>(_replacements)
         {
-            ["model"] = model,
+            ["model"] = string.IsNullOrWhiteSpace(_proofreadModel) ? model : _proofreadModel,
             ["sourceLine"] = sourceLine,
             ["translatedLine"] = translatedLine,
             ["lineToTranslate"] = string.Empty,
