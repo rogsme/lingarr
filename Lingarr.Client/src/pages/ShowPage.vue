@@ -18,6 +18,9 @@
                 <ButtonComponent size="sm" variant="accent" @click="toggleSelectMode">
                     {{ isSelectMode ? 'Cancel' : 'Translate multiple' }}
                 </ButtonComponent>
+                <ContextMenu @select="handleTranslateAll">
+                    <ButtonComponent size="sm" variant="accent">Translate all</ButtonComponent>
+                </ContextMenu>
                 <ButtonComponent
                     size="sm"
                     variant="accent"
@@ -215,6 +218,10 @@ const handleTranslate = async (language: ILanguage) => {
     )
     showStore.clearSelection()
     isSelectMode.value = false
+}
+
+const handleTranslateAll = async (language: ILanguage) => {
+    await translateStore.translateAll(language.code, MEDIA_TYPE.SHOW)
 }
 
 onMounted(async () => {

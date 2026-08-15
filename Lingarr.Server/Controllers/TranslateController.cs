@@ -1,4 +1,5 @@
-﻿using Lingarr.Contracts.Models;
+﻿using Hangfire;
+using Lingarr.Contracts.Models;
 using Lingarr.Core.Configuration;
 using Lingarr.Server.Attributes;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,7 @@ public class TranslateController : ControllerBase
     private readonly ITranslationRequestService _translationRequestService;
     private readonly ISettingService _settings;
     private readonly LanguageCodeService _languageCodeService;
+    private readonly IBackgroundJobClient _backgroundJobClient;
     private readonly ILogger<TranslateController> _logger;
 
     public TranslateController(
@@ -29,12 +31,14 @@ public class TranslateController : ControllerBase
         ITranslationRequestService translationRequestService,
         ISettingService settings,
         LanguageCodeService languageCodeService,
+        IBackgroundJobClient backgroundJobClient,
         ILogger<TranslateController> logger)
     {
         _translationServiceFactory = translationServiceFactory;
         _translationRequestService = translationRequestService;
         _settings = settings;
         _languageCodeService = languageCodeService;
+        _backgroundJobClient = backgroundJobClient;
         _logger = logger;
     }
 
@@ -72,6 +76,20 @@ public class TranslateController : ControllerBase
         {
             return StatusCode(500, new { Error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Initiates translation jobs for all media of the given type that is included in translation.
+    /// Discovery runs as a background job, so this returns immediately.
+    /// </summary>
+    /// <param name="request">The request containing the target language and media type.</param>
+    /// <returns>Returns an HTTP 200 OK response once the discovery job is enqueued.</returns>
+    [HttpPost("all")]
+    public ActionResult TranslateAll([FromBody] TranslateAllRequest request)
+    {
+        _backgroundJobClient.Enqueue<ITranslationRequestService>(service =>
+            service.CreateAllRequest(request.TargetLanguage, request.MediaType));
+        return Ok();
     }
 
     /// <summary>

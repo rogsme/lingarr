@@ -46,6 +46,20 @@ const service = (http: AxiosStatic, resource = '/api/translate'): ITranslateServ
             })
         })
     },
+    translateAll<T>(targetLanguage: string, mediaType: MediaType): Promise<T> {
+        return new Promise((resolve, reject) => {
+            http.post(`${resource}/all`, {
+                targetLanguage,
+                mediaType
+            })
+            .then((response: AxiosResponse<T>) => {
+                resolve(response.data)
+            })
+            .catch((error: AxiosError) => {
+                reject(error.response)
+            })
+        })
+    },
     getLanguages<T>(): Promise<T> {
         return new Promise((resolve, reject) => {
             http.get(`${resource}/languages`)

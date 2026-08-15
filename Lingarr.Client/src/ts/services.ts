@@ -108,6 +108,7 @@ export interface ITranslateService {
         targetLanguage: string,
         mediaType: MediaType
     ): Promise<T>
+    translateAll<T>(targetLanguage: string, mediaType: MediaType): Promise<T>
     getLanguages<T>(): Promise<T>
     proofreadStatus<T>(): Promise<T>
     proofreadLine<T>(request: IProofreadLineRequest): Promise<T>

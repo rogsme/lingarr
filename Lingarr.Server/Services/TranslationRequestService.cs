@@ -188,7 +188,31 @@ public class TranslationRequestService : ITranslationRequestService
     }
     
     /// <inheritdoc />
-    public async Task CreateBulkRequest(BulkTranslateRequest request)
+    public async Task CreateAllRequest(string targetLanguage, MediaType mediaType)
+    {
+        var mediaIds = mediaType switch
+        {
+            MediaType.Movie => await _dbContext.Movies
+                .Where(movie => movie.IncludeInTranslation)
+                .Select(movie => movie.Id)
+                .ToListAsync(),
+            MediaType.Show => await _dbContext.Shows
+                .Where(show => show.IncludeInTranslation)
+                .Select(show => show.Id)
+                .ToListAsync(),
+            _ => throw new ArgumentOutOfRangeException(nameof(mediaType), mediaType, null)
+        };
+
+        await CreateBulkRequest(new BulkTranslateRequest
+        {
+            MediaIds = mediaIds,
+            TargetLanguage = targetLanguage,
+            MediaType = mediaType
+        }, includedOnly: true);
+    }
+
+    /// <inheritdoc />
+    public async Task CreateBulkRequest(BulkTranslateRequest request, bool includedOnly = false)
     {
         var sourceLanguages = await _settingService.GetSettingAsJson<SourceLanguage>(
             SettingKeys.Translation.SourceLanguages
@@ -205,6 +229,10 @@ public class TranslationRequestService : ITranslationRequestService
 
                 foreach (var movie in movies)
                 {
+                    if (includedOnly && !movie.IncludeInTranslation)
+                    {
+                        continue;
+                    }
                     if (movie.Path == null)
                     {
                         _logger.LogInformation("Bulk: skipping movie {Id} — path is null", movie.Id);
@@ -230,8 +258,16 @@ public class TranslationRequestService : ITranslationRequestService
 
                 foreach (var show in shows)
                 {
+                    if (includedOnly && !show.IncludeInTranslation)
+                    {
+                        continue;
+                    }
                     foreach (var season in show.Seasons)
                     {
+                        if (includedOnly && !season.IncludeInTranslation)
+                        {
+                            continue;
+                        }
                         if (string.IsNullOrEmpty(season.Path))
                         {
                             continue;
@@ -239,6 +275,10 @@ public class TranslationRequestService : ITranslationRequestService
 
                         foreach (var episode in season.Episodes)
                         {
+                            if (includedOnly && !episode.IncludeInTranslation)
+                            {
+                                continue;
+                            }
                             if (string.IsNullOrEmpty(episode.FileName) || string.IsNullOrEmpty(episode.Path))
                             {
                                 continue;

@@ -44,6 +44,10 @@ export const useTranslateStore = defineStore('translate', {
             )
             await useTranslationRequestStore().fetchActiveTranslations()
         },
+        async translateAll(targetLanguage: string, mediaType: MediaType): Promise<void> {
+            await services.translate.translateAll<void>(targetLanguage, mediaType)
+            await useTranslationRequestStore().fetchActiveTranslations()
+        },
         async setLanguages(): Promise<void> {
             try {
                 this.languagesLoading = true

@@ -30,8 +30,17 @@ public interface ITranslationRequestService
     /// and source language resolution server-side.
     /// </summary>
     /// <param name="request">The bulk translate request containing media IDs, target language, and media type</param>
+    /// <param name="includedOnly">When true, media excluded from translation (IncludeInTranslation) is skipped</param>
     /// <returns>A list of created translation request IDs</returns>
-    Task CreateBulkRequest(BulkTranslateRequest request);
+    Task CreateBulkRequest(BulkTranslateRequest request, bool includedOnly = false);
+
+    /// <summary>
+    /// Creates translation requests for every media item of the given type that is included
+    /// in translation. Intended to run as a background job.
+    /// </summary>
+    /// <param name="targetLanguage">The language to translate into</param>
+    /// <param name="mediaType">The media type to process (Movie or Show)</param>
+    Task CreateAllRequest(string targetLanguage, MediaType mediaType);
 
     /// <summary>
     /// Retrieves the collection of currently active (Pending or InProgress) translation requests.
