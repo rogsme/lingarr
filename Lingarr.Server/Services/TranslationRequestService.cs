@@ -755,6 +755,7 @@ public class TranslationRequestService : ITranslationRequestService
                 SettingKeys.Translation.UseBatchTranslation,
                 SettingKeys.Translation.ServiceType,
                 SettingKeys.Translation.MaxBatchSize,
+                SettingKeys.Translation.BatchOverlapSize,
                 SettingKeys.Translation.StripSubtitleFormatting,
                 SettingKeys.Translation.PreserveLineBreaks
             ]);
@@ -814,6 +815,9 @@ public class TranslationRequestService : ITranslationRequestService
                 var maxSize = int.TryParse(settings[SettingKeys.Translation.MaxBatchSize], out var batchSize)
                     ? batchSize
                     : 10000;
+                var overlapSize = int.TryParse(settings[SettingKeys.Translation.BatchOverlapSize], out var overlap)
+                    ? overlap
+                    : 0;
 
                 _logger.LogDebug("Batch translation configuration: maxSize={maxSize}, stripFormatting={stripFormatting}, totalLines={totalLines}",
                     maxSize, stripSubtitleFormatting, totalSize);
@@ -831,7 +835,8 @@ public class TranslationRequestService : ITranslationRequestService
                     stripSubtitleFormatting,
                     preserveLineBreaks,
                     maxSize,
-                    cancellationToken);
+                    cancellationToken,
+                    overlapSize);
 
                 results = subtitleItems.Select(subtitle => new BatchTranslatedLine
                 {

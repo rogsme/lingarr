@@ -94,6 +94,7 @@ public class TranslationJob
                 SettingKeys.Translation.AiContextAfter,
                 SettingKeys.Translation.UseBatchTranslation,
                 SettingKeys.Translation.MaxBatchSize,
+                SettingKeys.Translation.BatchOverlapSize,
                 SettingKeys.Translation.RemoveLanguageTag,
                 SettingKeys.Translation.UseSubtitleTagging,
                 SettingKeys.Translation.SubtitleTag
@@ -204,9 +205,14 @@ public class TranslationJob
                     ? batchSize
                     : 10000;
 
+                var overlapSize = int.TryParse(settings[SettingKeys.Translation.BatchOverlapSize],
+                    out var overlap)
+                    ? overlap
+                    : 0;
+
                 _logger.LogInformation(
-                    "Using batch translation with max batch size: {maxBatchSize} for subtitle: {filePath}",
-                    maxSize, translationRequest.SubtitleToTranslate);
+                    "Using batch translation with max batch size: {maxBatchSize} and overlap: {overlapSize} for subtitle: {filePath}",
+                    maxSize, overlapSize, translationRequest.SubtitleToTranslate);
 
                 translatedSubtitles = await translator.TranslateSubtitlesBatch(
                     subtitles,
@@ -214,7 +220,8 @@ public class TranslationJob
                     stripSubtitleFormatting,
                     preserveLineBreaks,
                     maxSize,
-                    cancellationToken);
+                    cancellationToken,
+                    overlapSize);
             }
             else
             {

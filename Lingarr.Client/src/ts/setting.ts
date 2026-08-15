@@ -51,6 +51,7 @@ export const SETTINGS = {
     AI_CONTEXT_AFTER: 'ai_context_after',
     USE_BATCH_TRANSLATION: 'use_batch_translation',
     MAX_BATCH_SIZE: 'max_batch_size',
+    BATCH_OVERLAP_SIZE: 'batch_overlap_size',
     USE_SUBTITLE_TAGGING: 'use_subtitle_tagging',
     REMOVE_LANGUAGE_TAG: 'remove_language_tag',
     SUBTITLE_TAG: 'subtitle_tag',
@@ -129,6 +130,7 @@ export interface ISettings {
     ai_context_after: string
     use_batch_translation: string
     max_batch_size: string
+    batch_overlap_size: string
     use_subtitle_tagging: string
     remove_language_tag: string
     subtitle_tag: string
