@@ -53,6 +53,17 @@
                     v-model="maxBatchSize"
                     :validation-type="INPUT_VALIDATION_TYPE.NUMBER"
                     @update:validation="(val) => (isValid.maxBatchSize = val)" />
+
+                <div class="flex flex-col space-x-2">
+                    <span class="font-semibold">Batch overlap:</span>
+                    Amount of already-translated lines from the previous batch included as read-only
+                    context in the next batch, improving consistency of names, tone and terminology
+                    across batches. Set to 0 to disable.
+                </div>
+                <InputComponent
+                    v-model="batchOverlapSize"
+                    :validation-type="INPUT_VALIDATION_TYPE.NUMBER"
+                    @update:validation="(val) => (isValid.batchOverlapSize = val)" />
             </template>
 
             <div class="flex flex-col space-x-2">
@@ -108,6 +119,7 @@ const saveNotification = ref<InstanceType<typeof SaveNotification> | null>(null)
 const settingsStore = useSettingStore()
 const isValid = reactive({
     maxBatchSize: true,
+    batchOverlapSize: true,
     requestTimeout: true,
     maxRetries: true,
     retryDelay: true,
@@ -136,6 +148,14 @@ const maxBatchSize = computed({
     get: (): string => settingsStore.getSetting(SETTINGS.MAX_BATCH_SIZE) as string,
     set: (newValue: string): void => {
         settingsStore.updateSetting(SETTINGS.MAX_BATCH_SIZE, newValue, isValid.maxBatchSize)
+        saveNotification.value?.show()
+    }
+})
+
+const batchOverlapSize = computed({
+    get: (): string => settingsStore.getSetting(SETTINGS.BATCH_OVERLAP_SIZE) as string,
+    set: (newValue: string): void => {
+        settingsStore.updateSetting(SETTINGS.BATCH_OVERLAP_SIZE, newValue, isValid.batchOverlapSize)
         saveNotification.value?.show()
     }
 })

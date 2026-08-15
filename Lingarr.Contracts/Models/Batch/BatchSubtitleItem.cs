@@ -12,4 +12,18 @@ public class BatchSubtitleItem
 
     [JsonPropertyName("line")]
     public string Line { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Already-chosen translation for overlap context items; null for lines to translate.
+    /// </summary>
+    [JsonPropertyName("translation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Translation { get; set; }
+
+    /// <summary>
+    /// True for read-only context items from the previous batch that must not be retranslated.
+    /// </summary>
+    [JsonPropertyName("context")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IsContext { get; set; }
 }

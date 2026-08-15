@@ -512,6 +512,41 @@ public class SubtitleTranslationServiceTests
         Assert.Equal(["hello", "world"], subtitles[0].TranslatedLines);
     }
 
+    [Fact]
+    public async Task ProcessSubtitleBatch_WithOverlapContext_PrependsContextAndOnlyTranslatesNewLines()
+    {
+        // Arrange
+        List<BatchSubtitleItem> seen = [];
+        var harness = CreateBatchHarness(items =>
+        {
+            seen = items;
+            // Model echoes a translation for every item, including the read-only context one
+            return items.ToDictionary(i => i.Position, i => $"tr:{i.Line}");
+        });
+        var subtitles = new List<SubtitleItem> { Subtitle(2, "hello") };
+        var overlapContext = new List<BatchSubtitleItem>
+        {
+            new() { Position = 1, Line = "previous", Translation = "anterior", IsContext = true }
+        };
+
+        // Act
+        await harness.Service.ProcessSubtitleBatch(subtitles,
+            "en", "es",
+            stripSubtitleFormatting: false,
+            preserveLineBreaks: false,
+            CancellationToken.None,
+            overlapContext);
+
+        // Assert - context item is sent first with its existing translation, marked read-only
+        Assert.Equal(2, seen.Count);
+        Assert.Equal(1, seen[0].Position);
+        Assert.Equal("anterior", seen[0].Translation);
+        Assert.True(seen[0].IsContext);
+        // New line is translated; the model's output for the context position is discarded
+        Assert.Equal(2, seen[1].Position);
+        Assert.Equal(["tr:hello"], subtitles[0].TranslatedLines);
+    }
+
     #endregion
 
     #region Chain-wide best-match resolution

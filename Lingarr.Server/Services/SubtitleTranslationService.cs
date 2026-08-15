@@ -287,7 +287,8 @@ public class SubtitleTranslationService
         bool stripSubtitleFormatting,
         bool preserveLineBreaks,
         int batchSize = 0,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int overlapSize = 0)
     {
         if (_progressService == null)
         {
@@ -301,6 +302,7 @@ public class SubtitleTranslationService
 
         var totalBatches = (int)Math.Ceiling((double)subtitles.Count / batchSize);
         var processedSubtitles = 0;
+        List<BatchSubtitleItem>? overlapContext = null;
 
         for (var batchIndex = 0; batchIndex < totalBatches; batchIndex++)
         {
@@ -321,7 +323,24 @@ public class SubtitleTranslationService
                 translationRequest.TargetLanguage,
                 stripSubtitleFormatting,
                 preserveLineBreaks,
-                cancellationToken);
+                cancellationToken,
+                overlapContext);
+
+            if (overlapSize > 0)
+            {
+                overlapContext = currentBatch
+                    .Where(subtitle => subtitle.TranslatedLines.Count > 0)
+                    .TakeLast(overlapSize)
+                    .Select(subtitle => new BatchSubtitleItem
+                    {
+                        Position = subtitle.Position,
+                        Line = string.Join(" ",
+                            stripSubtitleFormatting ? subtitle.PlaintextLines : subtitle.Lines),
+                        Translation = string.Join(" ", subtitle.TranslatedLines),
+                        IsContext = true
+                    })
+                    .ToList();
+            }
 
             if (newlyTranslated.Count > 0)
             {
@@ -358,7 +377,8 @@ public class SubtitleTranslationService
         string targetLanguage,
         bool stripSubtitleFormatting,
         bool preserveLineBreaks,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        List<BatchSubtitleItem>? overlapContext = null)
     {
         var toTranslate = currentBatch.Where(subtitle => subtitle.TranslatedLines.Count == 0).ToList();
         if (toTranslate.Count == 0)
@@ -391,7 +411,8 @@ public class SubtitleTranslationService
                     toTranslate,
                     stripSubtitleFormatting,
                     preserveLineBreaks,
-                    cancellationToken);
+                    cancellationToken,
+                    overlapContext);
                 LogFallback(candidate, sourceLanguage, targetLanguage);
                 return toTranslate;
             }
@@ -414,7 +435,8 @@ public class SubtitleTranslationService
         List<SubtitleItem> toTranslate,
         bool stripSubtitleFormatting,
         bool preserveLineBreaks,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        List<BatchSubtitleItem>? overlapContext = null)
     {
         var lineSeparator = preserveLineBreaks ? "\n" : " ";
         var batchItems = toTranslate.Select(subtitle =>
@@ -426,6 +448,11 @@ public class SubtitleTranslationService
                 Line = string.Join(lineSeparator, contentLines)
             };
         }).ToList();
+
+        if (overlapContext is { Count: > 0 })
+        {
+            batchItems = overlapContext.Concat(batchItems).ToList();
+        }
 
         var batchResults = await candidate.Entry.BatchService!.TranslateBatchAsync(
             batchItems,

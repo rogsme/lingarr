@@ -94,6 +94,7 @@ public class TranslationJob
                 SettingKeys.Translation.AiContextAfter,
                 SettingKeys.Translation.UseBatchTranslation,
                 SettingKeys.Translation.MaxBatchSize,
+                SettingKeys.Translation.BatchOverlapSize,
                 SettingKeys.Translation.RemoveLanguageTag,
                 SettingKeys.Translation.UseSubtitleTagging,
                 SettingKeys.Translation.SubtitleTag
@@ -204,9 +205,14 @@ public class TranslationJob
                     ? batchSize
                     : 10000;
 
+                var overlapSize = int.TryParse(settings[SettingKeys.Translation.BatchOverlapSize],
+                    out var overlap)
+                    ? overlap
+                    : 0;
+
                 _logger.LogInformation(
-                    "Using batch translation with max batch size: {maxBatchSize} for subtitle: {filePath}",
-                    maxSize, translationRequest.SubtitleToTranslate);
+                    "Using batch translation with max batch size: {maxBatchSize} and overlap: {overlapSize} for subtitle: {filePath}",
+                    maxSize, overlapSize, translationRequest.SubtitleToTranslate);
 
                 translatedSubtitles = await translator.TranslateSubtitlesBatch(
                     subtitles,
@@ -214,7 +220,8 @@ public class TranslationJob
                     stripSubtitleFormatting,
                     preserveLineBreaks,
                     maxSize,
-                    cancellationToken);
+                    cancellationToken,
+                    overlapSize);
             }
             else
             {
@@ -334,6 +341,20 @@ public class TranslationJob
         await _translationRequestService.UpdateActiveCount();
         await _progressService.Emit(translationRequest, 100);
         await _scheduleService.UpdateJobState(jobName, JobStatus.Succeeded.GetDisplayName());
+
+        if (await _settings.GetSetting(SettingKeys.Translation.AutoProofread) == "true")
+        {
+            var proofreadStatus = await _translationRequestService.GetProofreadStatus();
+            if (proofreadStatus.Supported)
+            {
+                await _translationRequestService.ProofreadTranslationRequest(translationRequest);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Auto proofread is enabled but no configured translation service supports proofreading.");
+            }
+        }
     }
 
     private async Task HandleCancellation(string jobName, TranslationRequest request)

@@ -17,6 +17,7 @@ public abstract class BaseLanguageService : BaseTranslationService
     protected string? _userPrompt;
     protected string? _proofreadPrompt;
     protected string? _proofreadUserPrompt;
+    protected string? _proofreadModel;
     protected Dictionary<string, string> _replacements;
 
     protected BaseLanguageService(
@@ -62,7 +63,11 @@ public abstract class BaseLanguageService : BaseTranslationService
         return replacements;
     }
 
-    protected Dictionary<string, string> GetBatchReplacements(string model, string serializedBatch)
+    private const string BatchContextInstruction =
+        "\nItems marked with \"context\": true are already translated and are included only as reference " +
+        "for consistent names, tone and terminology. Do not retranslate them and do not include them in your output.";
+
+    protected Dictionary<string, string> GetBatchReplacements(string model, List<BatchSubtitleItem> subtitleBatch)
     {
         var replacements = new Dictionary<string, string>(_replacements)
         {
@@ -71,8 +76,13 @@ public abstract class BaseLanguageService : BaseTranslationService
             ["contextBefore"] = string.Empty,
             ["contextAfter"] = string.Empty
         };
-        replacements["systemPrompt"] = ReplacePlaceholders(_prompt, replacements);
-        replacements["userMessage"] = serializedBatch;
+        var systemPrompt = ReplacePlaceholders(_prompt, replacements);
+        if (subtitleBatch.Any(item => item.IsContext == true))
+        {
+            systemPrompt += BatchContextInstruction;
+        }
+        replacements["systemPrompt"] = systemPrompt;
+        replacements["userMessage"] = JsonSerializer.Serialize(subtitleBatch);
         return replacements;
     }
 
@@ -83,7 +93,7 @@ public abstract class BaseLanguageService : BaseTranslationService
     {
         var replacements = new Dictionary<string, string>(_replacements)
         {
-            ["model"] = model,
+            ["model"] = string.IsNullOrWhiteSpace(_proofreadModel) ? model : _proofreadModel,
             ["sourceLine"] = sourceLine,
             ["translatedLine"] = translatedLine,
             ["lineToTranslate"] = string.Empty,

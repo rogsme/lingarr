@@ -61,6 +61,7 @@ public class DeepSeekService : BaseLanguageService, IProofreadService
                 SettingKeys.Translation.AiUserPrompt,
                 SettingKeys.Translation.ProofreadPrompt,
                 SettingKeys.Translation.ProofreadUserPrompt,
+                SettingKeys.Translation.ProofreadModel,
                 SettingKeys.Translation.LanguageCodeFormat
             ]);
             _model = settings[SettingKeys.Translation.DeepSeek.Model];
@@ -79,6 +80,7 @@ public class DeepSeekService : BaseLanguageService, IProofreadService
             _userPrompt = settings[SettingKeys.Translation.AiUserPrompt];
             _proofreadPrompt = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadPrompt);
             _proofreadUserPrompt = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadUserPrompt);
+            _proofreadModel = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadModel);
 
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");

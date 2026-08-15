@@ -104,6 +104,8 @@ public static class SettingKeys
         public const string AiUserPrompt = "ai_user_prompt";
         public const string ProofreadPrompt = "proofread_prompt";
         public const string ProofreadUserPrompt = "proofread_user_prompt";
+        public const string AutoProofread = "auto_proofread";
+        public const string ProofreadModel = "proofread_model";
         public const string AiContextBefore = "ai_context_before";
         public const string AiContextAfter = "ai_context_after";
         public const string FixOverlappingSubtitles = "fix_overlapping_subtitles";
@@ -112,6 +114,7 @@ public static class SettingKeys
         public const string AddTranslatorInfo = "add_translator_info";
         public const string UseBatchTranslation = "use_batch_translation";
         public const string MaxBatchSize = "max_batch_size";
+        public const string BatchOverlapSize = "batch_overlap_size";
         public const string UseSubtitleTagging = "use_subtitle_tagging";
         public const string RemoveLanguageTag = "remove_language_tag";
         public const string SubtitleTag = "subtitle_tag";

@@ -89,6 +89,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
                 SettingKeys.Translation.AiUserPrompt,
                 SettingKeys.Translation.ProofreadPrompt,
                 SettingKeys.Translation.ProofreadUserPrompt,
+                SettingKeys.Translation.ProofreadModel,
                 SettingKeys.Translation.RequestTimeout,
                 SettingKeys.Translation.MaxRetries,
                 SettingKeys.Translation.RetryDelay,
@@ -114,6 +115,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
             _userPrompt = settings[SettingKeys.Translation.AiUserPrompt];
             _proofreadPrompt = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadPrompt);
             _proofreadUserPrompt = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadUserPrompt);
+            _proofreadModel = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadModel);
             _isChatEndpoint = _endpoint.TrimEnd('/').EndsWith("completions", StringComparison.OrdinalIgnoreCase);
 
             var requestTimeout = int.TryParse(settings[SettingKeys.Translation.RequestTimeout],
@@ -419,7 +421,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
             }
         };
 
-        var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
+        var replacements = GetBatchReplacements(_model!, subtitleBatch);
         var bodyJson = _requestTemplateService.BuildRequestBody(_chatRequestTemplate!, replacements);
         bodyJson = _requestTemplateService.SetRequestFields(bodyJson, new Dictionary<string, object?>
         {
@@ -487,7 +489,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         List<BatchSubtitleItem> subtitleBatch,
         CancellationToken cancellationToken)
     {
-        var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
+        var replacements = GetBatchReplacements(_model!, subtitleBatch);
         var bodyJson = _requestTemplateService.BuildRequestBody(_chatRequestTemplate!, replacements);
 
         var requestContent = new StringContent(
@@ -555,7 +557,7 @@ public class LocalAiService : BaseLanguageService, ITranslationService, IBatchTr
         List<BatchSubtitleItem> subtitleBatch,
         CancellationToken cancellationToken)
     {
-        var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
+        var replacements = GetBatchReplacements(_model!, subtitleBatch);
         replacements["systemPrompt"] +=
             "\n\nPlease return the response as a JSON array with objects containing 'position' and 'line' fields. Example: [{\"position\": 1, \"line\": \"translated text\"}]";
         var bodyJson = _requestTemplateService.BuildRequestBody(_generateRequestTemplate!, replacements);

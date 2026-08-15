@@ -67,6 +67,7 @@ public class GoogleGeminiService : BaseLanguageService, ITranslationService, IBa
                 SettingKeys.Translation.AiUserPrompt,
                 SettingKeys.Translation.ProofreadPrompt,
                 SettingKeys.Translation.ProofreadUserPrompt,
+                SettingKeys.Translation.ProofreadModel,
                 SettingKeys.Translation.RequestTimeout,
                 SettingKeys.Translation.MaxRetries,
                 SettingKeys.Translation.RetryDelay,
@@ -89,6 +90,7 @@ public class GoogleGeminiService : BaseLanguageService, ITranslationService, IBa
             _userPrompt = settings[SettingKeys.Translation.AiUserPrompt];
             _proofreadPrompt = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadPrompt);
             _proofreadUserPrompt = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadUserPrompt);
+            _proofreadModel = settings.GetValueOrDefault(SettingKeys.Translation.ProofreadModel);
 
             var requestTimeout = int.TryParse(settings[SettingKeys.Translation.RequestTimeout],
                 out var timeOut)
@@ -222,7 +224,7 @@ public class GoogleGeminiService : BaseLanguageService, ITranslationService, IBa
         Dictionary<string, string> replacements,
         CancellationToken cancellationToken)
     {
-        var endpoint = $"{_endpoint}/models/{_model}:generateContent?key={_apiKey}";
+        var endpoint = $"{_endpoint}/models/{replacements["model"]}:generateContent?key={_apiKey}";
         var bodyJson = _requestTemplateService.BuildRequestBody(_requestTemplate!, replacements);
 
         var content = new StringContent(
@@ -393,7 +395,7 @@ public class GoogleGeminiService : BaseLanguageService, ITranslationService, IBa
         CancellationToken cancellationToken)
     {
         var endpoint = $"{_endpoint}/models/{_model}:generateContent?key={_apiKey}";
-        var replacements = GetBatchReplacements(_model!, JsonSerializer.Serialize(subtitleBatch));
+        var replacements = GetBatchReplacements(_model!, subtitleBatch);
         var bodyJson = _requestTemplateService.BuildRequestBody(_requestTemplate!, replacements);
         bodyJson = _requestTemplateService.SetRequestFields(bodyJson, new Dictionary<string, object?>
         {
