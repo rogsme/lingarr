@@ -121,7 +121,8 @@ export interface ITranslationRequestService {
         pageNumber: number,
         searchQuery: string,
         sortBy: string,
-        ascending: boolean
+        ascending: boolean,
+        status?: string
     ): Promise<T>
     cancel<T>(translationRequest: ITranslationRequest): Promise<T>
     remove<T>(translationRequest: ITranslationRequest): Promise<T>

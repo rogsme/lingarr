@@ -26,7 +26,8 @@ export const useTranslationRequestStore = defineStore('translateRequest', {
             searchQuery: '',
             sortBy: 'CreatedAt',
             isAscending: true,
-            pageNumber: 1
+            pageNumber: 1,
+            status: TRANSLATION_STATUS.INPROGRESS
         },
         selectedRequests: [] as ITranslationRequest[],
         selectAll: false,
@@ -54,7 +55,8 @@ export const useTranslationRequestStore = defineStore('translateRequest', {
                 this.filter.pageNumber,
                 this.filter.searchQuery,
                 this.filter.sortBy,
-                this.filter.isAscending
+                this.filter.isAscending,
+                this.filter.status
             )
         },
         setActiveTranslations(activeTranslations: IActiveTranslation[]) {

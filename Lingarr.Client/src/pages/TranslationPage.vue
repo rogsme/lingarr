@@ -17,6 +17,18 @@
                     {{ isSelectMode ? 'Cancel' : 'Select' }}
                 </button>
                 <div class="flex flex-wrap items-center gap-2">
+                    <select
+                        class="block w-full rounded-md border border-accent bg-primary px-2 py-1 text-sm text-primary-content focus:border-accent focus:ring-2 focus:ring-accent md:w-auto"
+                        :value="filter.status ?? ''"
+                        @change="onStatusChange">
+                        <option value="">All statuses</option>
+                        <option :value="TRANSLATION_STATUS.PENDING">Pending</option>
+                        <option :value="TRANSLATION_STATUS.INPROGRESS">In progress</option>
+                        <option :value="TRANSLATION_STATUS.COMPLETED">Completed</option>
+                        <option :value="TRANSLATION_STATUS.FAILED">Failed</option>
+                        <option :value="TRANSLATION_STATUS.CANCELLED">Cancelled</option>
+                        <option :value="TRANSLATION_STATUS.INTERRUPTED">Interrupted</option>
+                    </select>
                     <SortControls
                         v-model="filter"
                         :options="[
@@ -193,6 +205,14 @@ const filter: ComputedRef<IFilter> = computed({
         translationRequestStore.setFilter(value)
     }, 300)
 })
+
+const onStatusChange = (event: Event) => {
+    translationRequestStore.setFilter({
+        ...filter.value,
+        status: (event.target as HTMLSelectElement).value,
+        pageNumber: 1
+    })
+}
 
 async function handleAction(translationRequest: ITranslationRequest, action: TRANSLATION_ACTIONS) {
     switch (action) {

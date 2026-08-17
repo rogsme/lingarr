@@ -1,4 +1,5 @@
 ﻿using Lingarr.Core.Entities;
+using Lingarr.Core.Enum;
 using Lingarr.Server.Attributes;
 using Microsoft.AspNetCore.Mvc;
 using Lingarr.Server.Interfaces.Services;
@@ -57,6 +58,7 @@ public class TranslationRequestController : ControllerBase
     /// Retrieves a paginated list of translation requests with optional filtering and sorting
     /// </summary>
     /// <param name="searchQuery">Optional search term to filter requests</param>
+    /// <param name="status">Optional translation status to filter requests</param>
     /// <param name="orderBy">Property name to sort the results by</param>
     /// <param name="ascending">Sort direction; true for ascending, false for descending</param>
     /// <param name="pageSize">Number of items per page</param>
@@ -67,6 +69,7 @@ public class TranslationRequestController : ControllerBase
     [HttpGet("requests")]
     public async Task<ActionResult<PagedResult<TranslationRequest>>> GetTranslationRequests(
         string? searchQuery,
+        TranslationStatus? status,
         string? orderBy,
         bool ascending = true,
         int pageSize = 20,
@@ -74,6 +77,7 @@ public class TranslationRequestController : ControllerBase
     {
         var value = await _translationRequestService.GetTranslationRequests(
             searchQuery,
+            status,
             orderBy,
             ascending,
             pageNumber,

@@ -64,6 +64,7 @@ public interface ITranslationRequestService
     /// Retrieves a paginated list of translation requests with optional filtering and sorting.
     /// </summary>
     /// <param name="searchQuery">Optional search term to filter requests by title</param>
+    /// <param name="status">Optional translation status to filter requests by</param>
     /// <param name="orderBy">Property to sort by: "Title", "CreatedAt", or "CompletedAt"</param>
     /// <param name="ascending">Sort direction</param>
     /// <param name="pageNumber">Page number for pagination (1-based)</param>
@@ -73,6 +74,7 @@ public interface ITranslationRequestService
     /// </returns>
     Task<PagedResult<TranslationRequest>> GetTranslationRequests(
         string? searchQuery,
+        TranslationStatus? status,
         string? orderBy,
         bool ascending,
         int pageNumber,

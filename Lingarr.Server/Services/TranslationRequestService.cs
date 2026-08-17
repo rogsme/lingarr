@@ -682,6 +682,7 @@ public class TranslationRequestService : ITranslationRequestService
     /// <inheritdoc />
     public async Task<PagedResult<TranslationRequest>> GetTranslationRequests(
         string? searchQuery,
+        TranslationStatus? status,
         string? orderBy,
         bool ascending,
         int pageNumber,
@@ -695,7 +696,12 @@ public class TranslationRequestService : ITranslationRequestService
         {
             query = query.Where(translationRequest => translationRequest.Title.ToLower().Contains(searchQuery.ToLower()));
         }
-    
+
+        if (status.HasValue)
+        {
+            query = query.Where(translationRequest => translationRequest.Status == status.Value);
+        }
+
         query = orderBy switch
         {
             "Title" => ascending 
