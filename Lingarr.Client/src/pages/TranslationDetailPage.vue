@@ -57,6 +57,10 @@
                                 {{ formatDateTime(detail.completedAt) }}
                             </div>
                         </div>
+                        <div v-if="duration">
+                            <span class="font-semibold">Duration</span>
+                            <div class="mt-1 text-sm">{{ duration }}</div>
+                        </div>
                         <div v-if="detail.subtitleToTranslate" class="col-span-2">
                             <span class="font-semibold">Subtitle Path</span>
                             <div class="mt-1 text-sm break-all">
@@ -75,8 +79,7 @@
                             </summary>
                             <pre
                                 class="mt-2 rounded bg-black/30 p-3 text-xs break-all whitespace-pre-wrap text-red-300/80"
-                                >{{ detail.stackTrace }}</pre
-                            >
+                                >{{ detail.stackTrace }}</pre>
                         </details>
                     </div>
                     <div v-if="showProgress" class="flex items-center gap-3">
@@ -124,7 +127,7 @@
                                     <button
                                         v-if="editable"
                                         title="Edit this line"
-                                        class="hover:text-primary-content/50 cursor-pointer text-primary-content transition-colors"
+                                        class="hover:text-primary-content/50 text-primary-content cursor-pointer transition-colors"
                                         @click="startEdit(line)">
                                         <PenIcon class="h-4 w-4" />
                                     </button>
@@ -132,7 +135,7 @@
                                         v-if="proofreadable"
                                         :disabled="proofreadState[line.position]?.loading"
                                         title="Proofread this line"
-                                        class="hover:text-primary-content/50 cursor-pointer text-primary-content transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                        class="hover:text-primary-content/50 text-primary-content cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                                         @click="requestProofread(line)">
                                         <LoaderCircleIcon
                                             v-if="proofreadState[line.position]?.loading"
@@ -236,7 +239,7 @@ import {
     TRANSLATION_STATUS
 } from '@/ts'
 import { useSignalR } from '@/composables/useSignalR'
-import { formatDateTime } from '@/utils/date'
+import { formatDateTime, formatDuration } from '@/utils/date'
 import services from '@/services'
 import useTranslationRequestStore from '@/store/translationRequest'
 import TranslationStatus from '@/components/common/TranslationStatus.vue'
@@ -276,10 +279,20 @@ const proofreadState = reactive<Record<number, IProofreadLineState>>({})
 
 const reversedLines = computed(() => (detail.value ? [...detail.value.lines].reverse() : []))
 
+const duration = computed(() => {
+    if (!detail.value?.completedAt) {
+        return null
+    }
+    const startedEvent = detail.value.events
+        ?.filter((event) => event.status === TRANSLATION_STATUS.INPROGRESS)
+        .at(-1)
+    const start = startedEvent?.createdAt ?? detail.value.createdAt
+    return start ? formatDuration(start, detail.value.completedAt) : null
+})
+
 const editable = computed(
     () =>
-        detail.value?.status === TRANSLATION_STATUS.COMPLETED &&
-        !!detail.value?.translatedSubtitle
+        detail.value?.status === TRANSLATION_STATUS.COMPLETED && !!detail.value?.translatedSubtitle
 )
 
 const proofreadable = computed(() => editable.value && translationRequestStore.proofreadSupported)
