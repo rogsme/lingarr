@@ -1,7 +1,8 @@
 export const INPUT_TYPE = {
     TEXT: 'text',
     NUMBER: 'number',
-    PASSWORD: 'password'
+    PASSWORD: 'password',
+    TIME: 'time'
 } as const
 
 export type InputType = (typeof INPUT_TYPE)[keyof typeof INPUT_TYPE]

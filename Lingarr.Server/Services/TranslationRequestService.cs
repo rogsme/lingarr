@@ -129,7 +129,8 @@ public class TranslationRequestService : ITranslationRequestService
             TargetLanguage = translateAbleSubtitle.TargetLanguage,
             SubtitleToTranslate = translateAbleSubtitle.SubtitlePath,
             MediaType = translateAbleSubtitle.MediaType,
-            Status = TranslationStatus.Pending
+            Status = TranslationStatus.Pending,
+            IsAutomated = translateAbleSubtitle.IsAutomated
         };
 
         return await EnqueueRequest(translationRequest);
@@ -170,7 +171,8 @@ public class TranslationRequestService : ITranslationRequestService
             SubtitleToTranslate = translationRequest.SubtitleToTranslate,
             MediaType = translationRequest.MediaType,
             Status = TranslationStatus.Pending,
-            JobType = TranslationJobType.Translation
+            JobType = TranslationJobType.Translation,
+            IsAutomated = translationRequest.IsAutomated
         };
 
         _dbContext.TranslationRequests.Add(translationRequestCopy);

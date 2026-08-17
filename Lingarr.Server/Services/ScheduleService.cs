@@ -38,6 +38,7 @@ public class ScheduleService : IScheduleService
             SettingKeys.Automation.MovieSchedule,
             SettingKeys.Automation.ShowSchedule,
             SettingKeys.Automation.AutomationEnabled,
+            SettingKeys.Automation.AutomationWindowEnabled,
             SettingKeys.Telemetry.TelemetryEnabled
         ]);
 
@@ -59,9 +60,13 @@ public class ScheduleService : IScheduleService
                         setting.Value);
                     break;
                 case "automation_enabled":
-                    if (setting.Value == "true")
+                    var windowEnabled = settings[SettingKeys.Automation.AutomationWindowEnabled] == "true";
+                    if (windowEnabled || setting.Value == "true")
                     {
-                        var translationSchedule = await settingService.GetSetting("translation_schedule");
+                        // Window mode polls every 5 minutes; the in-job window check gates actual work
+                        var translationSchedule = windowEnabled
+                            ? "*/5 * * * *"
+                            : await settingService.GetSetting("translation_schedule");
                         RecurringJob.AddOrUpdate<AutomatedTranslationJob>(
                             "AutomatedTranslationJob",
                             job => job.Execute(),

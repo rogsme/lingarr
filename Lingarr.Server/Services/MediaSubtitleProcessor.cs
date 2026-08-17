@@ -161,7 +161,8 @@ public class MediaSubtitleProcessor : IMediaSubtitleProcessor
                 SubtitlePath = selected.Subtitle.Path,
                 TargetLanguage = targetLanguage,
                 SourceLanguage = selected.SourceLanguage,
-                SubtitleFormat = selected.Subtitle.Format
+                SubtitleFormat = selected.Subtitle.Format,
+                IsAutomated = true
             });
             _logger.LogInformation(
                 "Initiating translation from |Orange|{sourceLanguage}|/Orange| to |Orange|{targetLanguage}|/Orange| for |Green|{subtitleFile}|/Green|",

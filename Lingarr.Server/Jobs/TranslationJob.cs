@@ -29,6 +29,7 @@ public class TranslationJob
     private readonly ITranslationServiceFactory _translationServiceFactory;
     private readonly ITranslationRequestService _translationRequestService;
     private readonly ITranslationRequestEventService _eventService;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
     public TranslationJob(
         ILogger<TranslationJob> logger,
@@ -40,7 +41,8 @@ public class TranslationJob
         IStatisticsService statisticsService,
         ITranslationServiceFactory translationServiceFactory,
         ITranslationRequestService translationRequestService,
-        ITranslationRequestEventService eventService)
+        ITranslationRequestEventService eventService,
+        IBackgroundJobClient backgroundJobClient)
     {
         _logger = logger;
         _settings = settings;
@@ -52,6 +54,7 @@ public class TranslationJob
         _translationServiceFactory = translationServiceFactory;
         _translationRequestService = translationRequestService;
         _eventService = eventService;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     [AutomaticRetry(Attempts = 0)]
@@ -67,6 +70,11 @@ public class TranslationJob
         {
             await _scheduleService.UpdateJobState(jobName, JobStatus.Processing.GetDisplayName());
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (translationRequest.IsAutomated && await DeferUntilWindowOpens(translationRequest, jobName))
+            {
+                return;
+            }
 
             var request = await _translationRequestService.UpdateTranslationRequest(translationRequest,
                 TranslationStatus.InProgress,
@@ -298,6 +306,52 @@ public class TranslationJob
             await _progressService.Emit(translationRequest, 0);
             throw;
         }
+    }
+
+    /// <summary>
+    /// When window-mode automation is enabled and the window is closed, reschedules this
+    /// automated translation to the next window opening instead of running it now.
+    /// In-flight translations are never interrupted; only jobs that have not started defer.
+    /// </summary>
+    /// <returns>True when the job was deferred and execution should stop.</returns>
+    private async Task<bool> DeferUntilWindowOpens(TranslationRequest translationRequest, string jobName)
+    {
+        var settings = await _settings.GetSettings([
+            SettingKeys.Automation.AutomationWindowEnabled,
+            SettingKeys.Automation.AutomationWindowStart,
+            SettingKeys.Automation.AutomationWindowEnd,
+            SettingKeys.Automation.AutomationWindowTimezone
+        ]);
+
+        if (settings[SettingKeys.Automation.AutomationWindowEnabled] != "true")
+        {
+            return false;
+        }
+
+        var start = settings[SettingKeys.Automation.AutomationWindowStart];
+        var end = settings[SettingKeys.Automation.AutomationWindowEnd];
+        var timezone = settings[SettingKeys.Automation.AutomationWindowTimezone];
+        if (AutomationWindow.IsOpenNow(start, end, timezone))
+        {
+            return false;
+        }
+
+        // ponytail: if the window setting is disabled while jobs sit in Hangfire's scheduled
+        // set, they still wait out their delay before re-checking; retry from the UI if needed.
+        var delay = AutomationWindow.UntilNextOpen(start, end, timezone);
+        var newJobId = _backgroundJobClient.Schedule<TranslationJob>(
+            job => job.Execute(translationRequest, CancellationToken.None),
+            delay);
+        await _translationRequestService.UpdateTranslationRequest(
+            translationRequest, TranslationStatus.Pending, newJobId);
+        await _eventService.LogEvent(translationRequest.Id, TranslationStatus.Pending,
+            $"Deferred until automation window opens in ~{delay.TotalMinutes:F0} minutes");
+        await _scheduleService.UpdateJobState(jobName, JobStatus.Scheduled.GetDisplayName());
+
+        _logger.LogInformation(
+            "Automation window is closed; deferred translation request {RequestId} for ~{Minutes:F0} minutes.",
+            translationRequest.Id, delay.TotalMinutes);
+        return true;
     }
 
     private async Task WriteSubtitles(TranslationRequest translationRequest,

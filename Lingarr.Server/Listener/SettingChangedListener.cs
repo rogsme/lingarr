@@ -50,7 +50,11 @@ public class SettingChangedListener
                 "automation", ("Job", "Automation", [
                     SettingKeys.Automation.AutomationEnabled,
                     SettingKeys.Automation.TranslationSchedule,
-                    SettingKeys.Automation.MaxTranslationsPerRun
+                    SettingKeys.Automation.MaxTranslationsPerRun,
+                    SettingKeys.Automation.AutomationWindowEnabled,
+                    SettingKeys.Automation.AutomationWindowStart,
+                    SettingKeys.Automation.AutomationWindowEnd,
+                    SettingKeys.Automation.AutomationWindowTimezone
                 ])
             },
             {
@@ -153,10 +157,13 @@ public class SettingChangedListener
                     _logger.LogInformation(
                         $"Settings changed for |Green|{jobName}|/Green|. Automation has been |Orange|modified|/Orange|.");
                     var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-                    if (settings[SettingKeys.Automation.AutomationEnabled] == "true")
+                    var windowEnabled = settings[SettingKeys.Automation.AutomationWindowEnabled] == "true";
+                    if (windowEnabled || settings[SettingKeys.Automation.AutomationEnabled] == "true")
                     {
-                        var translationSchedule =
-                            await settingService.GetSetting(SettingKeys.Automation.TranslationSchedule);
+                        // Window mode polls every 5 minutes; the in-job window check gates actual work
+                        var translationSchedule = windowEnabled
+                            ? "*/5 * * * *"
+                            : settings[SettingKeys.Automation.TranslationSchedule];
                         recurringJobManager.RemoveIfExists("AutomatedTranslationJob");
                         recurringJobManager.AddOrUpdate<AutomatedTranslationJob>(
                             "AutomatedTranslationJob",

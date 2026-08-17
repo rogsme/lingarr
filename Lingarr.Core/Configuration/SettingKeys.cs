@@ -137,6 +137,10 @@ public static class SettingKeys
         public const string ShowSchedule = "show_schedule";
         public const string MovieAgeThreshold = "movie_age_threshold";
         public const string ShowAgeThreshold = "show_age_threshold";
+        public const string AutomationWindowEnabled = "automation_window_enabled";
+        public const string AutomationWindowStart = "automation_window_start";
+        public const string AutomationWindowEnd = "automation_window_end";
+        public const string AutomationWindowTimezone = "automation_window_timezone";
     }
 
     public static class SubtitleValidation

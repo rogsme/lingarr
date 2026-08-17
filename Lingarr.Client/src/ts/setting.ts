@@ -15,6 +15,10 @@ export const SETTINGS = {
     MAX_TRANSLATIONS_PER_RUN: 'max_translations_per_run',
     AUTOMATION_ENABLED: 'automation_enabled',
     TRANSLATION_SCHEDULE: 'translation_schedule',
+    AUTOMATION_WINDOW_ENABLED: 'automation_window_enabled',
+    AUTOMATION_WINDOW_START: 'automation_window_start',
+    AUTOMATION_WINDOW_END: 'automation_window_end',
+    AUTOMATION_WINDOW_TIMEZONE: 'automation_window_timezone',
     OPENAI_MODEL: 'openai_model',
     OPENROUTER_MODEL: 'openrouter_model',
     ANTHROPIC_MODEL: 'anthropic_model',
@@ -92,6 +96,10 @@ export interface ISettings {
     source_languages: string | ILanguage[]
     target_languages: string | ILanguage[]
     automation_enabled: string
+    automation_window_enabled: string
+    automation_window_start: string
+    automation_window_end: string
+    automation_window_timezone: string
     sonarr_settings_completed: string
     radarr_settings_completed: string
     openai_model: string
@@ -159,7 +167,6 @@ export interface ISettings {
     sonarr_default_include: string
 }
 
-
 export const ENCRYPTED_SETTINGS = {
     API_KEY: 'api_key',
     RADARR_API_KEY: 'radarr_api_key',
@@ -174,7 +181,7 @@ export const ENCRYPTED_SETTINGS = {
     DEEPL_API_KEY: 'deepl_api_key',
     LIBRETRANSLATE_API_KEY: 'libretranslate_api_key',
     LOCAL_AI_API_KEY: 'local_ai_api_key',
-    OLLAMA_API_KEY: 'ollama_api_key',
+    OLLAMA_API_KEY: 'ollama_api_key'
 } as const
 
 export interface IEncryptedSettings {

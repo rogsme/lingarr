@@ -95,3 +95,9 @@ The supported values are:
 - **[Machine translation](/translation-services/machine-translation)**: [`libretranslate`](/translation-services/machine-translation#libretranslate), [`deepl`](/translation-services/machine-translation#deepl), [`google`](/translation-services/machine-translation#google-bing-microsoft-and-yandex), [`bing`](/translation-services/machine-translation#google-bing-microsoft-and-yandex), [`microsoft`](/translation-services/machine-translation#google-bing-microsoft-and-yandex) and [`yandex`](/translation-services/machine-translation#google-bing-microsoft-and-yandex)
 
 Each service has its own configuration variables, such as API keys and model selection, documented on its settings page.
+
+## Translation window
+
+As an alternative to cron-scheduled automation, a daily translation window can be enabled under **Settings → Automation**. Pick a timezone (IANA identifier) and a start/end time, and Lingarr translates continuously while inside the window — including overnight windows such as 22:00–06:00. The two modes are mutually exclusive: enabling the window disables scheduled automation and vice versa.
+
+When the window closes, the translation currently in progress finishes; queued automated translations wait for the next window and resume from the lines already translated. Manual translations started from the UI are not affected by the window.

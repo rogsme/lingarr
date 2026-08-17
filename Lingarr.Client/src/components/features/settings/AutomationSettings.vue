@@ -80,15 +80,59 @@
             </div>
         </template>
     </CardComponent>
+
+    <CardComponent title="Translation window">
+        <template #description>
+            Run translations continuously within a daily time window. This replaces the scheduled
+            automation above; enabling one disables the other.
+        </template>
+        <template #content>
+            <div class="flex flex-col space-y-4">
+                <div class="flex items-center space-x-2">
+                    <span>Translation window:</span>
+                    <ToggleButton v-model="windowEnabled">
+                        <span class="text-sm font-medium text-primary-content">
+                            {{ windowEnabled === 'true' ? 'Enabled' : 'Disabled' }}
+                        </span>
+                    </ToggleButton>
+                </div>
+
+                <template v-if="windowEnabled === 'true'">
+                    <span class="font-semibold">Timezone:</span>
+                    <SelectComponent
+                        :options="timezoneOptions"
+                        :selected="windowTimezone"
+                        placeholder="Select a timezone..."
+                        @update:selected="(value: string) => (windowTimezone = value)" />
+                    <span v-if="currentTimeInZone" class="text-sm">
+                        Current time in {{ windowTimezone }}: {{ currentTimeInZone }}
+                    </span>
+
+                    <span class="font-semibold">Set translation window:</span>
+                    <InputComponent
+                        v-model="windowStart"
+                        :type="INPUT_TYPE.TIME"
+                        label="Start time" />
+                    <InputComponent v-model="windowEnd" :type="INPUT_TYPE.TIME" label="End time" />
+                    <span class="text-sm">
+                        Translations run continuously between these times. When the window closes,
+                        the translation in progress finishes and remaining ones wait for the next
+                        window.
+                    </span>
+                </template>
+            </div>
+        </template>
+    </CardComponent>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useSettingStore } from '@/store/setting'
 import { useRouter } from 'vue-router'
 import { INPUT_TYPE, INPUT_VALIDATION_TYPE, SETTINGS } from '@/ts'
 import CardComponent from '@/components/common/CardComponent.vue'
 import InputComponent from '@/components/common/InputComponent.vue'
+import SelectComponent from '@/components/common/SelectComponent.vue'
 import ToggleButton from '@/components/common/ToggleButton.vue'
 import SaveNotification from '@/components/common/SaveNotification.vue'
 
@@ -105,8 +149,71 @@ const router = useRouter()
 const automationEnabled = computed({
     get: (): string => settingsStore.getSetting(SETTINGS.AUTOMATION_ENABLED) as string,
     set: (newValue: string): void => {
+        if (newValue === 'true' && windowEnabled.value === 'true') {
+            settingsStore.updateSetting(SETTINGS.AUTOMATION_WINDOW_ENABLED, 'false', true)
+        }
         settingsStore.updateSetting(SETTINGS.AUTOMATION_ENABLED, newValue, true)
         saveNotification.value?.show()
+    }
+})
+const windowEnabled = computed({
+    get: (): string => settingsStore.getSetting(SETTINGS.AUTOMATION_WINDOW_ENABLED) as string,
+    set: (newValue: string): void => {
+        if (newValue === 'true' && automationEnabled.value === 'true') {
+            settingsStore.updateSetting(SETTINGS.AUTOMATION_ENABLED, 'false', true)
+        }
+        settingsStore.updateSetting(SETTINGS.AUTOMATION_WINDOW_ENABLED, newValue, true)
+        saveNotification.value?.show()
+    }
+})
+const windowStart = computed({
+    get: (): string => settingsStore.getSetting(SETTINGS.AUTOMATION_WINDOW_START) as string,
+    set: (newValue: string): void => {
+        if (newValue) {
+            settingsStore.updateSetting(SETTINGS.AUTOMATION_WINDOW_START, newValue, true)
+            saveNotification.value?.show()
+        }
+    }
+})
+const windowEnd = computed({
+    get: (): string => settingsStore.getSetting(SETTINGS.AUTOMATION_WINDOW_END) as string,
+    set: (newValue: string): void => {
+        if (newValue) {
+            settingsStore.updateSetting(SETTINGS.AUTOMATION_WINDOW_END, newValue, true)
+            saveNotification.value?.show()
+        }
+    }
+})
+const windowTimezone = computed({
+    get: (): string => settingsStore.getSetting(SETTINGS.AUTOMATION_WINDOW_TIMEZONE) as string,
+    set: (newValue: string): void => {
+        if (newValue) {
+            settingsStore.updateSetting(SETTINGS.AUTOMATION_WINDOW_TIMEZONE, newValue, true)
+            saveNotification.value?.show()
+        }
+    }
+})
+
+const timezoneOptions = Intl.supportedValuesOf('timeZone').map((zone) => ({
+    label: zone,
+    value: zone
+}))
+const now = ref(new Date())
+let clockInterval: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+    clockInterval = setInterval(() => (now.value = new Date()), 1000)
+})
+onUnmounted(() => clearInterval(clockInterval))
+const currentTimeInZone = computed((): string => {
+    try {
+        return now.value.toLocaleTimeString(undefined, {
+            timeZone: windowTimezone.value,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        })
+    } catch {
+        return ''
     }
 })
 const movieSchedule = computed({

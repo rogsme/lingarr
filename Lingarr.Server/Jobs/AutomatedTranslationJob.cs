@@ -5,6 +5,7 @@ using Lingarr.Core.Enum;
 using Lingarr.Core.Interfaces;
 using Lingarr.Server.Filters;
 using Lingarr.Server.Interfaces.Services;
+using Lingarr.Server.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.OpenApi.Extensions;
@@ -55,10 +56,26 @@ public class AutomatedTranslationJob
             SettingKeys.Automation.TranslationCycle,
             SettingKeys.Automation.MaxTranslationsPerRun,
             SettingKeys.Automation.MovieAgeThreshold,
-            SettingKeys.Automation.ShowAgeThreshold
+            SettingKeys.Automation.ShowAgeThreshold,
+            SettingKeys.Automation.AutomationWindowEnabled,
+            SettingKeys.Automation.AutomationWindowStart,
+            SettingKeys.Automation.AutomationWindowEnd,
+            SettingKeys.Automation.AutomationWindowTimezone
         ]);
 
-        if (settings[SettingKeys.Automation.AutomationEnabled] == "false")
+        if (settings[SettingKeys.Automation.AutomationWindowEnabled] == "true")
+        {
+            if (!AutomationWindow.IsOpenNow(
+                    settings[SettingKeys.Automation.AutomationWindowStart],
+                    settings[SettingKeys.Automation.AutomationWindowEnd],
+                    settings[SettingKeys.Automation.AutomationWindowTimezone]))
+            {
+                _logger.LogInformation("Automation window is closed, skipping translation automation.");
+                await _scheduleService.UpdateJobState(jobName, JobStatus.Succeeded.GetDisplayName());
+                return;
+            }
+        }
+        else if (settings[SettingKeys.Automation.AutomationEnabled] == "false")
         {
             _logger.LogInformation("Automation not enabled, skipping translation automation.");
             return;
