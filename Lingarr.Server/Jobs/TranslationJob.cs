@@ -105,9 +105,21 @@ public class TranslationJob
                 SettingKeys.Translation.BatchOverlapSize,
                 SettingKeys.Translation.RemoveLanguageTag,
                 SettingKeys.Translation.UseSubtitleTagging,
-                SettingKeys.Translation.SubtitleTag
+                SettingKeys.Translation.SubtitleTag,
+
+                SettingKeys.Automation.AutomationWindowEnabled,
+                SettingKeys.Automation.AutomationWindowServiceType
             ]);
             var serviceNames = TranslationServices.Parse(settings[SettingKeys.Translation.ServiceType]);
+            var windowService = settings[SettingKeys.Automation.AutomationWindowServiceType];
+            if (translationRequest.IsAutomated
+                && settings[SettingKeys.Automation.AutomationWindowEnabled] == "true"
+                && !string.IsNullOrWhiteSpace(windowService))
+            {
+                // Window override is intentionally a single service: no fallback chain,
+                // so an off-hours cheap service never falls back to a paid one.
+                serviceNames = [windowService];
+            }
             var serviceType = serviceNames[0];
             var stripSubtitleFormatting = settings[SettingKeys.Translation.StripSubtitleFormatting] == "true";
             var preserveLineBreaks = settings[SettingKeys.Translation.PreserveLineBreaks] == "true";

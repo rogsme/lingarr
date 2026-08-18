@@ -141,6 +141,7 @@ public static class SettingKeys
         public const string AutomationWindowStart = "automation_window_start";
         public const string AutomationWindowEnd = "automation_window_end";
         public const string AutomationWindowTimezone = "automation_window_timezone";
+        public const string AutomationWindowServiceType = "automation_window_service_type";
     }
 
     public static class SubtitleValidation

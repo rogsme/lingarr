@@ -19,6 +19,7 @@ export const SETTINGS = {
     AUTOMATION_WINDOW_START: 'automation_window_start',
     AUTOMATION_WINDOW_END: 'automation_window_end',
     AUTOMATION_WINDOW_TIMEZONE: 'automation_window_timezone',
+    AUTOMATION_WINDOW_SERVICE_TYPE: 'automation_window_service_type',
     OPENAI_MODEL: 'openai_model',
     OPENROUTER_MODEL: 'openrouter_model',
     ANTHROPIC_MODEL: 'anthropic_model',
@@ -100,6 +101,7 @@ export interface ISettings {
     automation_window_start: string
     automation_window_end: string
     automation_window_timezone: string
+    automation_window_service_type: string
     sonarr_settings_completed: string
     radarr_settings_completed: string
     openai_model: string

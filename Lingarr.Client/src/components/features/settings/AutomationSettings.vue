@@ -119,6 +119,18 @@
                         the translation in progress finishes and remaining ones wait for the next
                         window.
                     </span>
+
+                    <span class="font-semibold">Translation service:</span>
+                    <SelectComponent
+                        :options="windowServiceOptions"
+                        :selected="windowService"
+                        placeholder="Default (use service order)"
+                        @update:selected="(value: string) => (windowService = value)" />
+                    <span class="text-sm">
+                        Optionally use a different service for translations started by the window,
+                        for example a cheaper local AI that can run overnight. Leave on default to
+                        use the service order from the services page.
+                    </span>
                 </template>
             </div>
         </template>
@@ -129,7 +141,8 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useSettingStore } from '@/store/setting'
 import { useRouter } from 'vue-router'
-import { INPUT_TYPE, INPUT_VALIDATION_TYPE, SETTINGS } from '@/ts'
+import { INPUT_TYPE, INPUT_VALIDATION_TYPE, IPluginSummary, SETTINGS } from '@/ts'
+import servicesApi from '@/services'
 import CardComponent from '@/components/common/CardComponent.vue'
 import InputComponent from '@/components/common/InputComponent.vue'
 import SelectComponent from '@/components/common/SelectComponent.vue'
@@ -184,6 +197,14 @@ const windowEnd = computed({
         }
     }
 })
+const windowService = computed({
+    get: (): string =>
+        (settingsStore.getSetting(SETTINGS.AUTOMATION_WINDOW_SERVICE_TYPE) as string) ?? '',
+    set: (newValue: string): void => {
+        settingsStore.updateSetting(SETTINGS.AUTOMATION_WINDOW_SERVICE_TYPE, newValue, true)
+        saveNotification.value?.show()
+    }
+})
 const windowTimezone = computed({
     get: (): string => settingsStore.getSetting(SETTINGS.AUTOMATION_WINDOW_TIMEZONE) as string,
     set: (newValue: string): void => {
@@ -198,10 +219,16 @@ const timezoneOptions = Intl.supportedValuesOf('timeZone').map((zone) => ({
     label: zone,
     value: zone
 }))
+const windowServiceOptions = ref<{ value: string; label: string }[]>([])
 const now = ref(new Date())
 let clockInterval: ReturnType<typeof setInterval> | undefined
-onMounted(() => {
+onMounted(async () => {
     clockInterval = setInterval(() => (now.value = new Date()), 1000)
+    const summaries: IPluginSummary[] = await servicesApi.plugin.list()
+    windowServiceOptions.value = [
+        { value: '', label: 'Default (use service order)' },
+        ...summaries.map((summary) => ({ value: summary.provider, label: summary.displayName }))
+    ]
 })
 onUnmounted(() => clearInterval(clockInterval))
 const currentTimeInZone = computed((): string => {
